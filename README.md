@@ -1,7 +1,7 @@
 # Lerch prime search
 
 An optimized version of [Vranic's Lerch-prime search](https://github.com/veljkovranic/lerch),
-with ARM NEON and x86 AVX-512 implementations. It uses their mathematical
+with ARM NEON and x86 AVX-512 implementations. It uses the same mathematical
 test, reduces the arithmetic needed for each prime, and extends the
 completed search to one billion.
 
@@ -48,9 +48,9 @@ Q_1^2+Q_2-2Q_1\equiv0\pmod p.
 $$
 
 Evaluating the definition separately for each $a$ would require $p-1$
-modular exponentiations. Vranic instead visits the residues in
-primitive-root order: repeatedly multiply by a suitable number $g$ and
-reduce modulo $p$ to visit every integer from 1 to $p-1$ once.
+modular exponentiations. The implementation in Vranic's repository uses
+a primitive-root recurrence: repeatedly multiply by a suitable number
+$g$ and reduce modulo $p$ to visit every integer from 1 to $p-1$ once.
 A recurrence updates the current Fermat quotient from the previous one,
 using the multiplication's carry and the residue's modular inverse.
 This turns the main calculation into a loop of additions,
@@ -109,7 +109,7 @@ derive the test and the identities used below.
 6. **Run different primes on different workers.**
    A sieve finds the primes in each interval. Workers take separate
    primes from that list, and each worker uses SIMD for its own prime.
-   This combines the prime-level parallelism used by Vranic with the
+   This combines the original implementation's prime-level parallelism with the
    faster inner loop. Completed intervals are saved as checkpoints.
 
 ## Measured speed
@@ -119,14 +119,14 @@ with eight workers on each machine.
 
 | Machine | Version | Wall-clock time |
 |---|---|---:|
-| M1 Max | Vranic's recurrence | 794.923 s |
+| M1 Max | Vranic's original implementation | 794.923 s |
 | M1 Max | Optimized NEON carry-word kernel | 27.839 s |
 | EPYC 9R45 | Optimized AVX2 kernel | 18.273 s |
 | EPYC 9R45 | Optimized AVX-512 kernel | **7.314 s** |
 
 The optimized ARM version is **28.55x faster on the same M1 Max**.
 On the EPYC, AVX-512 is **2.50x faster than AVX2**.
-Comparing Vranic's recurrence on the M1 Max with the optimized EPYC
+Comparing Vranic's original implementation on the M1 Max with the optimized EPYC
 version gives **108.68x overall**, combining software and hardware gains.
 
 The original baseline is one run; the optimized times are medians of
