@@ -21,12 +21,6 @@
       "transformation": "Unchanged bytes"
     },
     {
-      "output": "aws-price.json",
-      "original_sha256": "d2ecc97efd10f42c50b70a835b76a23259396e972189a919b4c3615304e9a385",
-      "published_sha256": "d2ecc97efd10f42c50b70a835b76a23259396e972189a919b4c3615304e9a385",
-      "transformation": "Unchanged bytes"
-    },
-    {
       "output": "generic-samples/summary.json",
       "original_sha256": "10fdbc0b48107300888bbd27de29c5460e2813861c0f384fd3d2fb0ef1d65d43",
       "published_sha256": "10fdbc0b48107300888bbd27de29c5460e2813861c0f384fd3d2fb0ef1d65d43",
@@ -99,6 +93,6 @@
       "transformation": "Selected scientific fields only; operational paths, service state, lint logs and speculative full-run projection omitted. All retained timing samples also checked against the nine raw archives."
     }
   ],
-  "derived_summaries": "benchmarks.json is computed from retained exact sample records; cost.json from audit.json and aws-price.json; upstream.json from pinned upstream manifests; assets.json from packaged bytes.",
+  "derived_summaries": "benchmarks.json is computed from retained exact sample records; upstream.json from pinned upstream manifests; assets.json from packaged bytes.",
   "privacy": "No raw service/SSH logs, host addresses, local home paths, locks, partial checkpoints or orphan files are selected for publication."
 }

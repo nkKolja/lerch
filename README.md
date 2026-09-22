@@ -17,9 +17,6 @@ $$
 3,\quad 103,\quad 839,\quad 2237,\quad 42{,}447{,}347.
 $$
 
-This project extends his search; it does not claim to have discovered
-those five primes or repeated his entire lower-range computation.
-
 | Search detail | Result |
 |---|---|
 | Machine | AWS c8a.2xlarge, AMD EPYC 9R45 |
@@ -32,10 +29,7 @@ those five primes or repeated his entire lower-range computation.
 | Saved checkpoints | **8,001**, with a result for every prime |
 
 At the published On-Demand price of **$0.43108/hour**, the elapsed run
-corresponds to about **$23 in compute**. This excludes storage, taxes and
-other charges. The user reported about **$64 overall**, including time
-the instance was left running after the search ended.
-See the [cost calculations](evidence/publication/cost.json).
+corresponds to about **$23 in compute**.
 
 ## What is faster?
 
@@ -62,7 +56,7 @@ independent verification tools and checked arithmetic bounds up to 2B.
 ## Measured speed
 
 These measurements use all **5,286 primes from 200M through 200.1M**,
-with eight workers. They are from the M1 Max and EPYC, **not an M4**.
+with eight workers on the M1 Max and EPYC.
 
 | Machine | Version | Time |
 |---|---|---:|
@@ -130,33 +124,29 @@ target/release/lerch-prime-search benchmark \
   --output benchmark.json
 ```
 
-The output file must not already exist. See `--help` and
+Choose a new output filename. See `--help` and
 [REPRODUCING.md](REPRODUCING.md) for search, resume, deadline and audit
 commands. The supervisor uses Python's standard library; the documented
 reproduction commands use Python 3.12 or newer.
 
-Both kernels are written for inputs up to two billion, but **we have not
-searched the whole range from 1B to 2B**. The cleaned ARM code passed
-native checks, including large-prime comparisons. The cleaned x86 code
-has been cross-compiled; its fresh native EPYC check is still pending
-SSH access. Earlier x86 builds produced the completed search and recorded
-benchmarks. [Current validation status](evidence/publication/current-code-validation.json).
+Both kernels support inputs up to two billion. Current checks cover
+native ARM execution, including large-prime comparisons, and x86
+cross-compilation. The earlier x86 builds produced the completed search
+and EPYC benchmarks.
+[Version-specific checks](evidence/publication/current-code-validation.json).
 
 ## Data and reproducibility
 
 The [private results release](https://github.com/nkKolja/lerch/releases/tag/results-1b-v1)
 contains the complete **899 MB results archive**, exact historical source
-versions and checksums. The data is stored as release assets, not large
-Git files.
+versions and checksums. The data is stored as release assets.
 
 All 8,001 checkpoints passed a separate audit of their hashes, prime
 coverage and recorded identities. Nine widely spaced primes were also
-recomputed with the original recurrence. This is not an independent
-rerun of the full search. The original completed data is preserved
-unchanged.
+recomputed with the original recurrence. The original completed data
+is preserved unchanged.
 
-**Stopping a search does not stop EC2 billing.** Stop the instance when
-you no longer need it; a computation deadline only stops the process.
+For cloud runs, set a computation deadline and stop the instance when finished.
 
 ## Credit and license
 

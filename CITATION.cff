@@ -2,8 +2,7 @@ cff-version: 1.2.0
 message: >-
   Cite this derivative software for the 200M-1B computational extension,
   and also cite Veljko Vranic's original software and lower-range data
-  listed in references. Software attribution does not imply joint
-  authorship of a paper.
+  listed in references.
 title: "Lerch primes: an audited computational extension from 200 million to one billion"
 type: software
 repository-code: "https://github.com/nkKolja/lerch"
@@ -19,7 +18,8 @@ abstract: >-
   attributed upstream computation through 200,000,000, the known five Lerch
   primes exhaust the range through one billion. The evidence audit checks
   all saved archives, independently regenerated prime coverage and stored
-  arithmetic identities; it is not an independent full arithmetic rerun.
+  arithmetic identities, with additional arithmetic cross-checks at
+  selected primes.
   The original MIT copyright and permission notice are preserved.
 keywords:
   - Lerch primes

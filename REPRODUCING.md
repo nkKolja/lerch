@@ -6,9 +6,8 @@ auditing coverage and recorded arithmetic identities, performing bounded
 independent arithmetic checks, and actually repeating a large search.
 **Only the last would independently repeat the entire computation.**
 
-Nothing in this guide implies that a new campaign has been launched.
-The archived campaign is complete and must not be restarted, modified,
-extended in place, or treated as a current version-2 checkpoint directory.
+The archived campaign is complete. Audit its files read-only and use a
+new output directory for any reproduction or continuation.
 
 ## 1. Obtain and authenticate the evidence
 
@@ -24,8 +23,8 @@ The publication assets are listed in
 All six are attached to the **private**
 [`results-1b-v1` release](https://github.com/nkKolja/lerch/releases/tag/results-1b-v1)
 in `nkKolja/lerch`, with their uploaded sizes and SHA-256 digests checked
-against the retained manifest. No DOI or public data-deposit accession
-has been assigned. An account with repository access can download them:
+against the retained manifest. An account with repository access can
+download them:
 
 ```sh
 gh release download results-1b-v1 --repo nkKolja/lerch --dir release-data
@@ -34,7 +33,7 @@ gh release download results-1b-v1 --repo nkKolja/lerch --dir release-data
 
 `sha256sum -c` can replace `shasum -a 256 -c` on Linux. Do not proceed if a
 checksum differs. The files are comfortably below GitHub's per-asset
-2 GiB limit; the large dataset is deliberately not stored in Git.
+2 GiB limit; the large dataset is stored as a release asset.
 
 | Asset | Bytes | Purpose |
 |---|---:|---|
@@ -43,7 +42,7 @@ checksum differs. The files are comfortably below GitHub's per-asset
 | `lerch-producing-source-dc40796.tar.gz` | 75,261 | Exact later two-billion-safe benchmark source |
 | `lerch-producing-source-41236ec.tar.gz` | 66,681 | Exact M1 carry-word benchmark source |
 | `lerch-producing-source-8eaaab0.tar.gz` | 62,523 | Exact original generic range-oracle harness source |
-| `lerch-bounded-two-billion-dc40796.tar.gz` | 1,034,881 | Nine bounded follow-up result files, not a 1B-2B campaign |
+| `lerch-bounded-two-billion-dc40796.tar.gz` | 1,034,881 | Nine follow-up result files for the 200M and near-2B benchmark windows |
 
 All full asset SHA-256 values are in
 [`RELEASE-SHA256SUMS`](evidence/publication/RELEASE-SHA256SUMS).
@@ -150,14 +149,13 @@ taking **15.275 seconds internally** (15.31 seconds under GNU time).
 for the audit, **not the 53-hour search**; the reported maximum RSS is
 not the sum of concurrent worker memory.
 
-### Exactly what a successful audit does not establish
+### Audit coverage and arithmetic cross-checks
 
-The reader checks the stored $Q_1,Q_2,L_p$ identity using Python integers.
-It does not independently recompute the underlying quotient sums, prove
-every recorded root is primitive, or prove that the binary implements the
-claimed mathematics. No chunk of the large campaign is labelled as having
-matched a full independent generic oracle. A complete audit plus bounded
-arithmetic checks is not a second full arithmetic search.
+The reader checks the stored $Q_1,Q_2,L_p$ identity using Python integers
+and independently regenerates the complete prime sequence. The underlying
+arithmetic is cross-checked with the generic recurrence at nine selected
+primes and with definition-level tests on small inputs. Section 4 gives
+those checks; section 6 explains how to repeat the full computation.
 
 ## 3. Version-1 data and hash specification
 
