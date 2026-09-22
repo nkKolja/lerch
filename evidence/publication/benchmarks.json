@@ -1,0 +1,161 @@
+{
+  "format": "lerch-historical-benchmarks-v1",
+  "date": "2026-09-11",
+  "interval": {
+    "start": 200000000,
+    "end": 200100000
+  },
+  "coverage": {
+    "primes": 5286,
+    "first_prime": 200000033,
+    "last_prime": 200099987,
+    "residue_terms": 1057463867896,
+    "odd_recurrence_terms": 1057463867896,
+    "primary_pair_steps": 528731933948,
+    "hits": [],
+    "sha256": "ed4e5e6f577278e72a61a207041679e42d84d3396d0d224bc83b8bc8d078242b"
+  },
+  "outer_workers": 8,
+  "inner_workers": 1,
+  "compiler": "rustc 1.98.1; release thin LTO; codegen-units=1; -C target-cpu=native",
+  "epyc_llvm": "22.1.8",
+  "recorded_hardware": {
+    "epyc_instance": "c8a.2xlarge",
+    "region": "us-east-1",
+    "processor": "AMD EPYC 9R45",
+    "allocated_cores": 8,
+    "hardware_threads_per_core": 1,
+    "memory_gib": 16,
+    "native_target": "znver5",
+    "os": "x86-64 Ubuntu Linux; Ubuntu 26.04 LTS observed at the 2026-09-22 post-run audit",
+    "historical_kernel": "7.0.0-1006-aws",
+    "mac_processor": "Apple M1 Max",
+    "mac_worker_affinity": "No claim of fixed core affinity or fully controlled background UI load"
+  },
+  "timing_includes": "fresh thread pool, segmented sieve, validation, setup, seeds, traversal, decode, sorted collection and pool teardown",
+  "timing_excludes": "compilation, fixture warmups, canonical hash, tuple comparison, printing and evidence I/O",
+  "m1_order": "rotating three-method order, three passes each",
+  "epyc_order": "rotated Fisher-Yates with xorshift64, seed 0x424473475eed, three passes each",
+  "m1_core_source": "41236ecc9a3dc6dc7baf2168ce33d9b17c5ad10f",
+  "m1_generic_harness_source": "8eaaab04e2402d70509fcc1938dd132c3e12fbef",
+  "epyc_source": "616b5e3f406aba620e9d6780e93275619490c7da",
+  "original_generic": {
+    "host": "Apple M1 Max",
+    "samples": 1,
+    "seconds": 794.922980875,
+    "raw_file": "original-200000000-200100000.json"
+  },
+  "measurements": [
+    {
+      "host": "Apple M1 Max",
+      "method": "carry32",
+      "raw_file": "m1-max-200m.jsonl",
+      "samples_seconds": [
+        27.839479417,
+        27.852997125,
+        27.830115042
+      ],
+      "median_seconds": 27.839479417,
+      "min_seconds": 27.830115042,
+      "max_seconds": 27.852997125,
+      "samples": 3
+    },
+    {
+      "host": "Apple M1 Max",
+      "method": "carry32-reciprocal",
+      "raw_file": "m1-max-200m.jsonl",
+      "samples_seconds": [
+        28.867703458,
+        28.764702584,
+        28.772851916
+      ],
+      "median_seconds": 28.772851916,
+      "min_seconds": 28.764702584,
+      "max_seconds": 28.867703458,
+      "samples": 3
+    },
+    {
+      "host": "Apple M1 Max",
+      "method": "paired",
+      "raw_file": "m1-max-200m.jsonl",
+      "samples_seconds": [
+        29.789657042,
+        29.570979375,
+        29.570754041
+      ],
+      "median_seconds": 29.570979375,
+      "min_seconds": 29.570754041,
+      "max_seconds": 29.789657042,
+      "samples": 3
+    },
+    {
+      "host": "AMD EPYC 9R45",
+      "method": "avx2-16",
+      "raw_file": "epyc-200m.jsonl",
+      "samples_seconds": [
+        18.363818744,
+        18.235986215,
+        18.273070412
+      ],
+      "median_seconds": 18.273070412,
+      "min_seconds": 18.235986215,
+      "max_seconds": 18.363818744,
+      "samples": 3
+    },
+    {
+      "host": "AMD EPYC 9R45",
+      "method": "avx512-16",
+      "raw_file": "epyc-200m.jsonl",
+      "samples_seconds": [
+        16.237223962,
+        16.092034809,
+        16.092824146
+      ],
+      "median_seconds": 16.092824146,
+      "min_seconds": 16.092034809,
+      "max_seconds": 16.237223962,
+      "samples": 3
+    },
+    {
+      "host": "AMD EPYC 9R45",
+      "method": "avx512-32",
+      "raw_file": "epyc-200m.jsonl",
+      "samples_seconds": [
+        9.378327278,
+        9.330806048,
+        9.323258616
+      ],
+      "median_seconds": 9.330806048,
+      "min_seconds": 9.323258616,
+      "max_seconds": 9.378327278,
+      "samples": 3
+    },
+    {
+      "host": "AMD EPYC 9R45",
+      "method": "avx512-64",
+      "raw_file": "epyc-200m.jsonl",
+      "samples_seconds": [
+        7.314033628,
+        7.511042754,
+        7.303449789
+      ],
+      "median_seconds": 7.314033628,
+      "min_seconds": 7.303449789,
+      "max_seconds": 7.511042754,
+      "samples": 3
+    }
+  ],
+  "speedups": {
+    "same_m1_generic_one_pass_over_carry32_median": 28.553801921654664,
+    "same_m1_paired_over_carry32_medians": 1.0621958454058833,
+    "same_epyc_avx2_16_over_avx512_64_medians": 2.4983574510849924,
+    "cross_hardware_m1_carry32_over_epyc_avx512_64_medians": 3.80631001072012,
+    "cross_hardware_m1_generic_one_pass_over_epyc_avx512_64_median": 108.68462209851354
+  },
+  "caveats": [
+    "The EPYC original-generic full interval run was interrupted: no same-host generic baseline exists.",
+    "Legacy generic_one_pass_speedup fields in the EPYC raw file reuse the M1 oracle time, so they change hardware.",
+    "These are historical source-version measurements, not measurements of every later cleanup revision or a universal speed ranking.",
+    "M1 UI/background scheduling was not fully controlled; original generic has one sample, not a median or confidence interval."
+  ]
+}

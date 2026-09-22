@@ -1,0 +1,123 @@
+{
+  "format": "lerch-bounded-followup-v1",
+  "date": "2026-09-22",
+  "source_commit": "dc4079671dc81f013c9a543f24b5e8cf63f6e6f0",
+  "old_kernel_commit": "616b5e3f406aba620e9d6780e93275619490c7da",
+  "compiler": "rustc 1.98.1 / LLVM 22.1.8, -C target-cpu=native, thin LTO, codegen-units=1",
+  "host": "Ubuntu c8a.2xlarge, AMD EPYC 9R45, 8 physical cores / 8 threads",
+  "threads": 8,
+  "inner_threads": 1,
+  "method": "avx512-64",
+  "below1b": {
+    "all_six_passes_match_every_original_generic_tuple": true,
+    "interval": {
+      "end": 200100000,
+      "start": 200000000
+    },
+    "median_slowdown_percent": 1.2526826755356435,
+    "new": {
+      "external_wall_seconds": [
+        7.5,
+        7.5,
+        7.4
+      ],
+      "internal_seconds": [
+        7.428804841,
+        7.405642397,
+        7.313839195
+      ],
+      "max_seconds": 7.428804841,
+      "median_external_wall_seconds": 7.5,
+      "median_seconds": 7.405642397,
+      "min_seconds": 7.313839195
+    },
+    "old": {
+      "external_wall_seconds": [
+        7.4,
+        7.5,
+        7.3
+      ],
+      "internal_seconds": [
+        7.314020924,
+        7.387619906,
+        7.247145587
+      ],
+      "max_seconds": 7.387619906,
+      "median_external_wall_seconds": 7.4,
+      "median_seconds": 7.314020924,
+      "min_seconds": 7.247145587
+    },
+    "summary": {
+      "first_prime": 200000033,
+      "hits": [],
+      "last_prime": 200099987,
+      "odd_recurrence_terms": 1057463867896,
+      "primary_pair_steps": 528731933948,
+      "primes": 5286,
+      "residue_terms": 1057463867896,
+      "sha256": "ed4e5e6f577278e72a61a207041679e42d84d3396d0d224bc83b8bc8d078242b"
+    }
+  },
+  "near2b": {
+    "all_three_passes_identical": true,
+    "full_interval_generic_oracle": false,
+    "interval": {
+      "end": 2000000000,
+      "start": 1999900000
+    },
+    "square_cap": 4,
+    "summary": {
+      "first_prime": 1999900013,
+      "hits": [],
+      "last_prime": 1999999973,
+      "odd_recurrence_terms": 9171769708754,
+      "primary_pair_steps": 4585884854377,
+      "primes": 4586,
+      "residue_terms": 9171769708754,
+      "sha256": "8a44243b5a2e60fc08445454ac0d97b64191826d688a83d672b6ef9548972a4b"
+    },
+    "timing": {
+      "external_wall_seconds": [
+        116.86,
+        116.16,
+        116.16
+      ],
+      "internal_seconds": [
+        116.748159853,
+        116.046598295,
+        116.084169738
+      ],
+      "max_seconds": 116.748159853,
+      "median_external_wall_seconds": 116.16,
+      "median_seconds": 116.084169738,
+      "min_seconds": 116.046598295
+    }
+  },
+  "large_original_generic_oracles": [
+    {
+      "is_lerch": false,
+      "lerch_remainder": 1304737101,
+      "original_generic_seconds": 8.961698997,
+      "p": 1499999957,
+      "primitive_root": 2,
+      "q1": 1286426299,
+      "q2": 483232988
+    },
+    {
+      "is_lerch": false,
+      "lerch_remainder": 1433408083,
+      "original_generic_seconds": 12.447849794,
+      "p": 1999999973,
+      "primitive_root": 2,
+      "q1": 30303682,
+      "q2": 1772269194
+    }
+  ],
+  "new_binary_sha256": {
+    "cycles_comparison": "bfd67c6ea15f8ac119b60744ef7341d1250a64046970bcdb74aa488b47b8b743",
+    "doubling_cycles": "c2bdf40655b63de79326a2e65aee6185db67ff7b36eac4712f6f4166b9125f77"
+  },
+  "raw_asset": "lerch-bounded-two-billion-dc40796.tar.gz",
+  "raw_asset_sha256": "724226a3515c7dd0e5666f069e0648e002dfcb709b8bc3dafa78593c3d6a3e8e",
+  "scope": "Nine bounded passes and two large-prime generic checks. No full 1B-2B campaign. A later publication build is a different source version."
+}

@@ -1,0 +1,13 @@
+{
+  "format": "lerch-audit-resources-v1",
+  "tool": "GNU /usr/bin/time -v",
+  "audit_workers": 8,
+  "elapsed_wall_seconds": 15.31,
+  "aggregate_user_cpu_seconds": 118.22,
+  "aggregate_system_cpu_seconds": 2.09,
+  "reported_max_resident_set_kib": 46336,
+  "exit_status": 0,
+  "memory_scope": "GNU time reported maximum RSS, not the sum of simultaneous worker resident sets.",
+  "original_transcript_sha256": "30e30681910fff3a9040cc9bcba3430530fdaf5bfb71e05905e2580db6ad03ab",
+  "transformation": "Selected resource fields; command line with deployment paths omitted."
+}

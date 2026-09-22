@@ -1,0 +1,61 @@
+cff-version: 1.2.0
+message: >-
+  Cite this derivative software for the 200M-1B computational extension,
+  and also cite Veljko Vranic's original software and lower-range data
+  listed in references. Software attribution does not imply joint
+  authorship of a paper.
+title: "Lerch primes: an audited computational extension from 200 million to one billion"
+type: software
+authors:
+  - family-names: Kaluderovic
+    given-names: Novak
+license: MIT
+abstract: >-
+  An optimized ARM NEON and x86-64 AVX-512 implementation and reproducibility
+  package for a completed search of all 39,768,597 primes above 200,000,000
+  through 1,000,000,000, with no additional Lerch primes. Combined with the
+  attributed upstream computation through 200,000,000, the known five Lerch
+  primes exhaust the range through one billion. The evidence audit checks
+  all saved archives, independently regenerated prime coverage and stored
+  arithmetic identities; it is not an independent full arithmetic rerun.
+  The original MIT copyright and permission notice are preserved.
+keywords:
+  - Lerch primes
+  - Fermat quotients
+  - computational number theory
+  - reproducibility
+  - SIMD
+references:
+  - type: software
+    title: "Lerch prime search and verification"
+    authors:
+      - family-names: Vranic
+        given-names: Veljko
+    version: 0.3.0
+    date-released: 2026-08-30
+    license: MIT
+    repository-code: "https://github.com/veljkovranic/lerch"
+    commit: a42ef4064e0f2f443b74de36d5535c7c40e39736
+    url: "https://github.com/veljkovranic/lerch/releases/tag/v0.3.0"
+  - type: generic
+    title: "Lerch Quotients, Lerch Primes, Fermat-Wilson Quotients, and the Wieferich-non-Wilson Primes 2, 3, 14771"
+    authors:
+      - family-names: Sondow
+        given-names: Jonathan
+    year: 2014
+    url: "https://arxiv.org/abs/1110.3113v5"
+  - type: article
+    title: "A characterization of Wilson-Lerch primes"
+    authors:
+      - family-names: Dobson
+        given-names: John Blythe
+    journal: Integers
+    volume: "16"
+    year: 2016
+    url: "https://arxiv.org/abs/1311.2242v7"
+  - type: database
+    title: "The On-Line Encyclopedia of Integer Sequences, A197632"
+    authors:
+      - name: The OEIS Foundation Inc.
+    url: "https://oeis.org/A197632"
+    date-accessed: 2026-09-22

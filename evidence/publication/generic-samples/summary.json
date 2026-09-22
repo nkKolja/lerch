@@ -1,0 +1,155 @@
+{
+  "format": "lerch-stratified-generic-checks-v1",
+  "selection": "first prime in chunks 0,1000,...,7000; last prime in chunk 7999",
+  "manifest_sha256": "f01b8a20fba9565025a21419423a81ebc675877c4ebfc42f5edbfad254b015ef",
+  "binary_sha256": "27aa1036c7a32c0e8519c74d88b8511776242a8782495da8f3cb99b76b80151e",
+  "source_sha": "616b5e3f406aba620e9d6780e93275619490c7da",
+  "script_sha256": "a44785d3c9725d564cebe47e84cbc99ccf5e6e3a5233b1a42662391df859e112",
+  "samples": [
+    {
+      "p": 200000033,
+      "campaign_archive": "chunks/chunk-0200000000-0200099999.json.gz",
+      "full_canonical_tuple_matched": true,
+      "canonical": {
+        "p": 200000033,
+        "primitive_root": 3,
+        "q1": 137318602,
+        "q2": 95654240,
+        "lerch_remainder": 182473149,
+        "is_lerch": false
+      },
+      "generic_seconds": 1.194223302,
+      "raw_result": "prime-200000033.json",
+      "raw_sha256": "b7848c8fe4a80030b82f1dde43bff6c48b0748c03ff40fbe83099d690adc8ea0"
+    },
+    {
+      "p": 300000007,
+      "campaign_archive": "chunks/chunk-0300000000-0300099999.json.gz",
+      "full_canonical_tuple_matched": true,
+      "canonical": {
+        "p": 300000007,
+        "primitive_root": 3,
+        "q1": 49460712,
+        "q2": 114544803,
+        "lerch_remainder": 145044275,
+        "is_lerch": false
+      },
+      "generic_seconds": 1.7950379939999999,
+      "raw_result": "prime-300000007.json",
+      "raw_sha256": "a7edd196faf68746df2d3e5b4f60f62b45a158dd9ccfdd15ad70fbb9e8acca18"
+    },
+    {
+      "p": 400000009,
+      "campaign_archive": "chunks/chunk-0400000000-0400099999.json.gz",
+      "full_canonical_tuple_matched": true,
+      "canonical": {
+        "p": 400000009,
+        "primitive_root": 11,
+        "q1": 200105269,
+        "q2": 76658182,
+        "lerch_remainder": 128531184,
+        "is_lerch": false
+      },
+      "generic_seconds": 2.425834903,
+      "raw_result": "prime-400000009.json",
+      "raw_sha256": "1601c92492a7caf0fe262b9dae0ce1d768a2bc7855343e2cf4385500a08d3175"
+    },
+    {
+      "p": 500000003,
+      "campaign_archive": "chunks/chunk-0500000000-0500099999.json.gz",
+      "full_canonical_tuple_matched": true,
+      "canonical": {
+        "p": 500000003,
+        "primitive_root": 2,
+        "q1": 237088196,
+        "q2": 294568186,
+        "lerch_remainder": 82830669,
+        "is_lerch": false
+      },
+      "generic_seconds": 2.990579386,
+      "raw_result": "prime-500000003.json",
+      "raw_sha256": "6691796d968f417e45e2985377fbeeb7beb768c09c5ec381b1077cded5c1cfbe"
+    },
+    {
+      "p": 600000001,
+      "campaign_archive": "chunks/chunk-0600000000-0600099999.json.gz",
+      "full_canonical_tuple_matched": true,
+      "canonical": {
+        "p": 600000001,
+        "primitive_root": 11,
+        "q1": 88119518,
+        "q2": 58165656,
+        "lerch_remainder": 260768598,
+        "is_lerch": false
+      },
+      "generic_seconds": 4.639930617,
+      "raw_result": "prime-600000001.json",
+      "raw_sha256": "ab667bc63cafe347a84fc7ca9df70e11cf97f95c25248d3a8e3e1612ba924160"
+    },
+    {
+      "p": 700000001,
+      "campaign_archive": "chunks/chunk-0700000000-0700099999.json.gz",
+      "full_canonical_tuple_matched": true,
+      "canonical": {
+        "p": 700000001,
+        "primitive_root": 3,
+        "q1": 234290046,
+        "q2": 114856996,
+        "lerch_remainder": 411271064,
+        "is_lerch": false
+      },
+      "generic_seconds": 4.182144266,
+      "raw_result": "prime-700000001.json",
+      "raw_sha256": "ebfbdab6f3f49d062194b71c26b5f850ce3a2dec86d2ec6db7af2b5ab926c8f2"
+    },
+    {
+      "p": 800000011,
+      "campaign_archive": "chunks/chunk-0800000000-0800099999.json.gz",
+      "full_canonical_tuple_matched": true,
+      "canonical": {
+        "p": 800000011,
+        "primitive_root": 2,
+        "q1": 736285857,
+        "q2": 540041410,
+        "lerch_remainder": 615793704,
+        "is_lerch": false
+      },
+      "generic_seconds": 4.787212563,
+      "raw_result": "prime-800000011.json",
+      "raw_sha256": "ce3cee45838126005c5cc4335678e5b7fd111f382fdd687a7b084b691511e76d"
+    },
+    {
+      "p": 900000011,
+      "campaign_archive": "chunks/chunk-0900000000-0900099999.json.gz",
+      "full_canonical_tuple_matched": true,
+      "canonical": {
+        "p": 900000011,
+        "primitive_root": 2,
+        "q1": 752844058,
+        "q2": 570592500,
+        "lerch_remainder": 601785967,
+        "is_lerch": false
+      },
+      "generic_seconds": 5.385724145,
+      "raw_result": "prime-900000011.json",
+      "raw_sha256": "50828c3dde217e113c0fe8e6f3ca6724a901156117beae0533f22a4dff7bda6d"
+    },
+    {
+      "p": 999999937,
+      "campaign_archive": "chunks/chunk-0999900000-0999999999.json.gz",
+      "full_canonical_tuple_matched": true,
+      "canonical": {
+        "p": 999999937,
+        "primitive_root": 11,
+        "q1": 704850951,
+        "q2": 548295932,
+        "lerch_remainder": 281768345,
+        "is_lerch": false
+      },
+      "generic_seconds": 9.332504446,
+      "raw_result": "prime-999999937.json",
+      "raw_sha256": "8c96b1bea2265e3b2686f9d39487add85e3a950c09c4961d1fdf551cdf6778fd"
+    }
+  ],
+  "scope": "Separate original generic recurrence, same historical binary and shared arithmetic; not definition-level or a full campaign rerun. Concurrent single-worker timings are not benchmark samples."
+}

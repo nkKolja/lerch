@@ -1,0 +1,104 @@
+{
+  "format": "lerch-publication-evidence-provenance-v1",
+  "source_evidence_commit": "4d411448ff585cca0a459d347e4b4c3768b845ea",
+  "files": [
+    {
+      "output": "audit.json",
+      "original_sha256": "790932c370592723b3b248055eb72dd484ba50e01b3074304652fa51b2baf2cd",
+      "published_sha256": "790932c370592723b3b248055eb72dd484ba50e01b3074304652fa51b2baf2cd",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "original-200000000-200100000.json",
+      "original_sha256": "62e2f827b8e5f092c8a8d99fb44745dd8e3d5c6d21ea59d3b1e4d6d80fa81ee5",
+      "published_sha256": "62e2f827b8e5f092c8a8d99fb44745dd8e3d5c6d21ea59d3b1e4d6d80fa81ee5",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "m1-max-200m.jsonl",
+      "original_sha256": "f6b9c5ce294a86b7f3c47a857cc4a49cf6aaeeba035f221507ffc6808f45fd9b",
+      "published_sha256": "f6b9c5ce294a86b7f3c47a857cc4a49cf6aaeeba035f221507ffc6808f45fd9b",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "aws-price.json",
+      "original_sha256": "d2ecc97efd10f42c50b70a835b76a23259396e972189a919b4c3615304e9a385",
+      "published_sha256": "d2ecc97efd10f42c50b70a835b76a23259396e972189a919b4c3615304e9a385",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "generic-samples/summary.json",
+      "original_sha256": "10fdbc0b48107300888bbd27de29c5460e2813861c0f384fd3d2fb0ef1d65d43",
+      "published_sha256": "10fdbc0b48107300888bbd27de29c5460e2813861c0f384fd3d2fb0ef1d65d43",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "generic-samples/prime-200000033.json",
+      "original_sha256": "b7848c8fe4a80030b82f1dde43bff6c48b0748c03ff40fbe83099d690adc8ea0",
+      "published_sha256": "b7848c8fe4a80030b82f1dde43bff6c48b0748c03ff40fbe83099d690adc8ea0",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "generic-samples/prime-300000007.json",
+      "original_sha256": "a7edd196faf68746df2d3e5b4f60f62b45a158dd9ccfdd15ad70fbb9e8acca18",
+      "published_sha256": "a7edd196faf68746df2d3e5b4f60f62b45a158dd9ccfdd15ad70fbb9e8acca18",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "generic-samples/prime-400000009.json",
+      "original_sha256": "1601c92492a7caf0fe262b9dae0ce1d768a2bc7855343e2cf4385500a08d3175",
+      "published_sha256": "1601c92492a7caf0fe262b9dae0ce1d768a2bc7855343e2cf4385500a08d3175",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "generic-samples/prime-500000003.json",
+      "original_sha256": "6691796d968f417e45e2985377fbeeb7beb768c09c5ec381b1077cded5c1cfbe",
+      "published_sha256": "6691796d968f417e45e2985377fbeeb7beb768c09c5ec381b1077cded5c1cfbe",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "generic-samples/prime-600000001.json",
+      "original_sha256": "ab667bc63cafe347a84fc7ca9df70e11cf97f95c25248d3a8e3e1612ba924160",
+      "published_sha256": "ab667bc63cafe347a84fc7ca9df70e11cf97f95c25248d3a8e3e1612ba924160",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "generic-samples/prime-700000001.json",
+      "original_sha256": "ebfbdab6f3f49d062194b71c26b5f850ce3a2dec86d2ec6db7af2b5ab926c8f2",
+      "published_sha256": "ebfbdab6f3f49d062194b71c26b5f850ce3a2dec86d2ec6db7af2b5ab926c8f2",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "generic-samples/prime-800000011.json",
+      "original_sha256": "ce3cee45838126005c5cc4335678e5b7fd111f382fdd687a7b084b691511e76d",
+      "published_sha256": "ce3cee45838126005c5cc4335678e5b7fd111f382fdd687a7b084b691511e76d",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "generic-samples/prime-900000011.json",
+      "original_sha256": "50828c3dde217e113c0fe8e6f3ca6724a901156117beae0533f22a4dff7bda6d",
+      "published_sha256": "50828c3dde217e113c0fe8e6f3ca6724a901156117beae0533f22a4dff7bda6d",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "generic-samples/prime-999999937.json",
+      "original_sha256": "8c96b1bea2265e3b2686f9d39487add85e3a950c09c4961d1fdf551cdf6778fd",
+      "published_sha256": "8c96b1bea2265e3b2686f9d39487add85e3a950c09c4961d1fdf551cdf6778fd",
+      "transformation": "Unchanged bytes"
+    },
+    {
+      "output": "epyc-200m.jsonl",
+      "original_sha256": "08c48427cb7486d1ca874669329a99ea576b12ea0d081c0a8d312babe46d46d0",
+      "published_sha256": "76ada299c42050212dcc49186d873e122c608d26dee8783efa69a98616785714",
+      "transformation": "Only the header oracle_path value was changed from an absolute operational path to its basename. All other bytes, including timings and canonical hashes, are unchanged."
+    },
+    {
+      "output": "two-billion-bounded.json",
+      "original_sha256": "da6c26fef36943da9d1e9767ab3e82c8a69a0bda49db9d25735fd80640224fd7",
+      "published_sha256": "abde1623df608e11a134371f6b131981ecec4b951975b167d9fe929929ad9ef8",
+      "transformation": "Selected scientific fields only; operational paths, service state, lint logs and speculative full-run projection omitted. All retained timing samples also checked against the nine raw archives."
+    }
+  ],
+  "derived_summaries": "benchmarks.json is computed from retained exact sample records; cost.json from audit.json and aws-price.json; upstream.json from pinned upstream manifests; assets.json from packaged bytes.",
+  "privacy": "No raw service/SSH logs, host addresses, local home paths, locks, partial checkpoints or orphan files are selected for publication."
+}

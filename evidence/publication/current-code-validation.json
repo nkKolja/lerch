@@ -1,0 +1,102 @@
+{
+  "format": "lerch-current-code-validation-v1",
+  "date": "2026-09-22",
+  "code_commit": "6f498b69c7d6426f626d0dd69ff3ae0f49a1a446",
+  "scope": "Validation of the cleaned publication implementation, not a new exhaustive search or a replacement for historical benchmark medians.",
+  "compiler": {
+    "rustc": "1.98.1",
+    "rustc_commit": "48a229ceaefd4985c50990b14116b6d856af0985",
+    "llvm": "22.1.8",
+    "host": "aarch64-apple-darwin",
+    "rustflags": null,
+    "profile": "release"
+  },
+  "local_checks": {
+    "rust_core_tests_passed": 18,
+    "rust_cli_integration_tests_passed": 8,
+    "rust_reference_tests_passed": 4,
+    "ordinary_suite_ignored_tests": 2,
+    "supervisor_tests_passed": 18,
+    "historical_audit_and_packaging_tests_passed": 19,
+    "cargo_fmt": "passed",
+    "cargo_clippy_all_targets_all_features_warnings_denied": "passed",
+    "original_mit_license": "unchanged",
+    "explicit_unsupported_avx512_request_on_arm": "rejected without scalar fallback"
+  },
+  "arm_native": {
+    "processor": "Apple M1 Max",
+    "backend": "neon",
+    "kernel": "neon16-centered-carry32-division-r64",
+    "status": "passed",
+    "coverage": [
+      "All odd primes through 2000 against independent definitions and the original generic recurrence; exact sign-pair coverage for both doubling-order parities.",
+      "Known Lerch primes 3, 103, 839, 2237 and 42447347; high-coset prime 524287.",
+      "Canonical boundary states, carry words, shifted segments and tails at and across batch requests 1, 4, 18, 31, 32, 33, 460, 461 and 8192.",
+      "Definition-derived segments at 1000000007, 1073741827, 1431655777, 1499999957, 1999999811 and 1999999973.",
+      "Genuine overflow regression at p=1999999811 and c=119; normalized next encoded X=350424241."
+    ],
+    "full_large_prime_original_generic_cross_checks": {
+      "command": "cargo test --release --lib doubling_cycles::tests::two_billion_full_moments_match_original_generic -- --ignored --exact --nocapture",
+      "method": "Full O(p) original generic-g recurrence, not per-residue bigint p^3 exponentiation.",
+      "status": "passed",
+      "canonical": [
+        {
+          "p": 1499999957,
+          "primitive_root": 2,
+          "q1": 1286426299,
+          "q2": 483232988,
+          "lerch_remainder": 1304737101,
+          "is_lerch": false
+        },
+        {
+          "p": 1999999973,
+          "primitive_root": 2,
+          "q1": 30303682,
+          "q2": 1772269194,
+          "lerch_remainder": 1433408083,
+          "is_lerch": false
+        }
+      ]
+    },
+    "primary_cli_range_sanity": {
+      "command": "target/release/lerch-prime-search benchmark --start 200000000 --end 200100000 --threads 8 --backend auto --output NEW_FILE.json --oracle evidence/publication/original-200000000-200100000.json",
+      "samples": 1,
+      "timing_interpretation": "One pass without warmup; not a median, controlled speedup estimate or universal fastest claim.",
+      "seconds": 26.423994083,
+      "pool_sieve_seconds": 0.000735166,
+      "validation_setup_traversal_collection_seconds": 26.42324575,
+      "pool_teardown_seconds": 0.000013167,
+      "binary_sha256": "31675933f85a57992cac2a055b7ce6bd0cc803e89adfb3e2816e660f52612925",
+      "primes": 5286,
+      "first_prime": 200000033,
+      "last_prime": 200099987,
+      "residue_terms": 1057463867896,
+      "primary_pair_steps": 528731933948,
+      "hits": [],
+      "canonical_sha256": "ed4e5e6f577278e72a61a207041679e42d84d3396d0d224bc83b8bc8d078242b",
+      "full_original_generic_tuples_matched": true
+    }
+  },
+  "x86_current_snapshot": {
+    "all_targets_cross_compilation": {
+      "command": "cargo check --release --offline --locked --target x86_64-apple-darwin --all-targets --quiet",
+      "status": "passed",
+      "code_executed": false,
+      "target_was_already_installed": true
+    },
+    "native_avx512_execution_after_cleanup": "not_run",
+    "reason": "The code and coordinating sessions both encountered SSH-agent signing failures. No alternative authentication or repeated retry was attempted.",
+    "historical_native_evidence": "two-billion-bounded.json",
+    "historical_native_source": "dc4079671dc81f013c9a543f24b5e8cf63f6e6f0",
+    "limitation": "Archived AVX-512 native results do not establish that this cleaned snapshot was natively executed. Native AVX-512 validation remains required when authorized host access returns."
+  },
+  "verification_semantics": {
+    "range_and_campaign_formats": ["lerch-range-v2", "lerch-campaign-v2"],
+    "canonical_hash_format": "lerch-canonical-v1",
+    "search_candidates": "pending-independent-verification",
+    "generic_verify_cannot_promote_candidate_status": true,
+    "archived_v1_resume": "refused without modifying archived data",
+    "deadline": "Persisted absolute cutoff at most 24 hours after original creation; never extended by resume.",
+    "full_two_billion_campaign_launched": false
+  }
+}
