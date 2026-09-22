@@ -464,3 +464,138 @@ samples and all other bytes in that JSONL file are unchanged.
 Original campaign manifest/progress and canonical gzip archives are
 not redacted or rewritten. Private operational logs and orphan/partial
 files are excluded rather than republished.
+
+## 9. Mathematical details
+
+### Why two moments suffice
+
+For an odd prime $p$, write
+
+$$
+q_p(a)=\frac{a^{p-1}-1}{p},\qquad
+W_p=\frac{(p-1)!+1}{p}.
+$$
+
+Use the full integer sums $S=\sum_{a=1}^{p-1}q_p(a)$ and
+$T=\sum_{a=1}^{p-1}q_p(a)^2$ below. Their residues modulo $p$ are
+$Q_1$ and $Q_2$.
+
+The definition gives $1+p q_p(a)=a^{p-1}$. Multiply for every $a$:
+
+$$
+\prod_{a=1}^{p-1}(1+p q_p(a))=((p-1)!)^{p-1}.
+$$
+
+Expand the left side modulo $p^3$. Terms using three or more
+nonconstant factors vanish. The terms using two factors sum to
+$\sum_{a<b}q_p(a)q_p(b)=(S^2-T)/2$, giving
+
+$$
+1+pS+\frac{p^2}{2}(S^2-T)\pmod{p^3}.
+$$
+
+For the right side, $(p-1)!=-1+pW_p$ and $p-1$ is even:
+
+$$
+((p-1)!)^{p-1}
+=(1-pW_p)^{p-1}
+\equiv1-(p-1)pW_p+\binom{p-1}{2}p^2W_p^2
+\equiv1+pW_p+p^2(W_p^2-W_p)\pmod{p^3}.
+$$
+
+Lerch's congruence makes $\ell_p=(S-W_p)/p$ an integer. Equating the
+expansions, cancelling and dividing by $p^2$ gives
+
+$$
+2\ell_p+S^2-T\equiv2W_p^2-2W_p\pmod p.
+$$
+
+Substitute $S\equiv W_p\pmod p$:
+
+$$
+\boxed{2\ell_p\equiv Q_1^2+Q_2-2Q_1\pmod p.}
+$$
+
+This moment test is part of the upstream method. The implementation
+improvements speed up the calculation of those same two sums.
+
+### Doubling cycles and sign pairs
+
+Write $2c=c'+kp$ with canonical $1\le c,c'<p$ and $k\in\{0,1\}$.
+For $u=q_p(c)$, $v=c^{-1}$ and $G=q_p(2)$, all taken modulo $p$,
+
+$$
+v'=v/2,\qquad u'=u+G+kv'\pmod p.
+$$
+
+Let $m$ be the smallest positive integer with $2^m\equiv1\pmod p$,
+and let $d=(p-1)/m$. If $g$ is a primitive root, the cosets with
+representatives $1,g,\ldots,g^{d-1}$ give all $d$ doubling cycles.
+This covers every nonzero residue even when 2 is not primitive.
+
+The partner of the canonical integer $a$ is the canonical integer
+$p-a$, not the literal negative integer $-a$. Binomial expansion gives
+
+$$
+q_p(p-a)\equiv q_p(a)+a^{-1}\pmod p.
+$$
+
+The centered state $x=2u+v$ is the same for both members of a pair.
+Their contributions to the moments are $x$ and $(x^2+v^2)/2$.
+For $p>3$, the sum of $v^2$ over one representative of every sign pair
+is zero modulo $p$, so
+
+$$
+Q_1=\sum_{\text{pairs}}x,\qquad
+Q_2=\frac12\sum_{\text{pairs}}x^2\pmod p.
+$$
+
+For $p=3$, add 1 to the centered square sum before halving.
+The conversion is made only after checking that all $(p-1)/2$ pairs
+have been consumed, not separately for arbitrary partial blocks.
+
+If $m$ is even, $2^{m/2}\equiv-1$, so traverse half of every cycle.
+If $m$ is odd, $d$ is even and negation pairs cosets $r$ and $r+d/2$;
+traverse all of the first $d/2$ cycles. In either case the update is
+
+$$
+c'=2c-kp,\qquad v'=v/2,\qquad
+x'=x+2G+(2k-1)v'\pmod p.
+$$
+
+There is no exponentiation inside this loop.
+
+### Carry words and safe accumulation
+
+For the ARM kernel, compute
+
+$$
+2^{32}c=Kp+c_{32},\qquad K=\left\lfloor 2^{32}c/p\right\rfloor.
+$$
+
+The bits of $K$, most significant first, are the next 32 doubling
+carries. This saves the per-step residue update; it does not skip
+the quotient or moment updates.
+
+Both kernels use Montgomery radix $R=2^{64}$. Encoded squares have
+scale $R^2$, so each block needs one Montgomery reduction to restore
+scale $R$. The safe per-lane block size is
+
+$$
+B=\min\left(8192,\left\lfloor
+\frac{2^{64}-1}{(p-1)^2}\right\rfloor\right).
+$$
+
+For $p\le2\cdot10^9$, a canonical two-operand sum is below
+$2p<2^{32}$. The centered update must reduce between additions:
+forming a raw three-operand sum first can overflow 32 bits.
+Wide first-moment and reduced-square totals are bounded by $(p-1)^2$
+and $p(p-1)$, both below $4\cdot10^{18}<2^{64}$.
+Seed products are below $p^2$; modular powers modulo $p^2$ use 128-bit
+products below $p^4<2^{128}$.
+
+The square block size is only 4 near two billion. These checked bounds
+explain the supported limit; raising the limit alone is not safe.
+The historical search used scalar cleanup for incomplete coset groups;
+the cleaned kernels use SIMD tails. Old benchmark timings are therefore
+not silently relabelled as measurements of the new source.
