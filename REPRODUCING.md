@@ -385,7 +385,7 @@ needs the machine, and verify the instance state after stopping it.
 ## 7. Preserve upstream credit and evidence
 
 The lower-range result belongs to
-[Veljko Vranic's upstream v0.3.0](https://github.com/veljkovranic/lerch/releases/tag/v0.3.0),
+[Vranic's upstream v0.3.0](https://github.com/veljkovranic/lerch/releases/tag/v0.3.0),
 pinned at `a42ef4064e0f2f443b74de36d5535c7c40e39736`.
 [The upstream ledger](evidence/publication/upstream.json) records the six
 intervals, byte-level and aggregate manifest hashes, raw archive URLs and

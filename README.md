@@ -1,93 +1,44 @@
 # Lerch prime search
 
-A faster version of [Veljko Vranic's Lerch-prime search](https://github.com/veljkovranic/lerch).
-It keeps the original mathematical test and adds faster ARM NEON and
-x86 AVX-512 implementations.
+An optimized version of [Vranic's Lerch-prime search](https://github.com/veljkovranic/lerch),
+with ARM NEON and x86 AVX-512 implementations. It uses their mathematical
+test, reduces the arithmetic needed for each prime, and extends the
+completed search to one billion.
 
 ## Result
 
 We checked **every prime above 200 million through one billion**:
 **39,768,597 primes, with no new Lerch primes found**.
 
-Veljko's earlier search covered the range through 200 million and found
-the fifth Lerch prime, 42,447,347. Combining his result with this search,
+Vranic's earlier search covered the range through 200 million and found
+the fifth Lerch prime, 42,447,347. Combining their result with this search,
 the only Lerch primes up to one billion are:
 
 $$
 3,\quad 103,\quad 839,\quad 2237,\quad 42{,}447{,}347.
 $$
 
-| Search detail | Result |
-|---|---|
-| Machine | AWS c8a.2xlarge, AMD EPYC 9R45 |
-| Resources | 8 physical CPU cores, 16 GiB RAM |
-| Implementation | AVX-512, 64 streams per worker, 8 workers |
-| Build | Rust 1.98.1, release with native CPU features |
-| Elapsed time | **53 hours 24 minutes**, including interruptions |
-| Sum of chunk computation times | **51 hours 41 minutes** |
-| Completed | 14 September 2026, 03:17 UTC |
-| Saved checkpoints | **8,001**, with a result for every prime |
-
-At the published On-Demand price of **$0.43108/hour**, the elapsed run
-corresponds to about **$23 in compute**.
-
-## What is faster?
-
-The original code already uses a recurrence instead of computing each
-power separately. This version improves that approach:
-
-- **Doubling:** use multiplication by 2 and modular halving in the inner
-  loop. Separate cycles cover primes where 2 is not a primitive root.
-- **Pairs:** process $a$ and $p-a$ together, cutting the traversal in half.
-- **Independent streams:** split cycles into pieces that can run together.
-- **SIMD:** process several states per instruction, using NEON on ARM
-  and AVX-512 on x86.
-- **Batched arithmetic:** keep states in Montgomery form and accumulate
-  products in wide registers before reducing them.
-- **Deferred sums:** avoid reducing both moment sums after every term.
-- **Carry words on ARM:** calculate 32 doubling carries at once, rather
-  than calculate a new carry in every step.
-- **Parallel search:** give different primes to different CPU workers;
-  SIMD runs within each worker, without another layer of threads.
-
-The cleaned code also has resumable searches, deadline limits,
-independent verification tools and checked arithmetic bounds up to 2B.
-
-## Measured speed
-
-These measurements use all **5,286 primes from 200M through 200.1M**,
-with eight workers on the M1 Max and EPYC.
-
-| Machine | Version | Time |
-|---|---|---:|
-| M1 Max | Original generic recurrence | 794.923 s |
-| M1 Max | Optimized NEON carry-word kernel | 27.839 s |
-| EPYC 9R45 | Optimized AVX2 kernel | 18.273 s |
-| EPYC 9R45 | Optimized AVX-512 kernel | **7.314 s** |
-
-- **28.55x faster on the same M1 Max.**
-- **2.50x faster for AVX-512 versus AVX2 on the same EPYC.**
-- **108.68x faster overall**, comparing the original M1 run with the
-  optimized EPYC run. That includes the hardware change.
-
-The original baseline is one run; the optimized times are medians of
-three runs. These are the recorded September 11 builds, before the
-publication cleanup. [Full measurements and source versions](evidence/publication/benchmarks.json)
-are retained so the comparisons can be repeated.
+The run used **eight cores of an AMD EPYC 9R45** on an AWS c8a.2xlarge
+instance. It completed on 14 September 2026 after **53 hours 24 minutes
+of wall-clock time**, including interruptions. At $0.43108 per hour,
+this corresponds to approximately **$23 in compute**.
 
 ## How the test works
 
-For an odd prime $p$, the Fermat quotient is
+For an odd prime $p$ and an integer $a$ between 1 and $p-1$, Fermat's
+little theorem says that $a^{p-1}-1$ is divisible by $p$. The resulting
+integer is the **Fermat quotient**:
 
 $$
 q_p(a)=\frac{a^{p-1}-1}{p}.
 $$
 
-Compute the two sums over $a=1,\ldots,p-1$:
+The Lerch test uses two sums: the quotients and their squares, both
+reduced modulo $p$:
 
 $$
-Q_1=\sum_a q_p(a)\pmod p,\qquad
-Q_2=\sum_a q_p(a)^2\pmod p.
+Q_1=\sum_{a=1}^{p-1}q_p(a)\pmod p,\qquad
+Q_2=\sum_{a=1}^{p-1}q_p(a)^2\pmod p.
 $$
 
 Then $p$ is a Lerch prime exactly when
@@ -96,11 +47,92 @@ $$
 Q_1^2+Q_2-2Q_1\equiv0\pmod p.
 $$
 
-The fast loop generates the quotients by doubling residues. It uses the
-relationship between $a$ and $p-a$ to recover both sums after visiting
-only half the residues. See the
-[mathematical explanation](REPRODUCING.md#9-mathematical-details)
-for the derivation and pairing identity.
+Evaluating the definition separately for each $a$ would require $p-1$
+modular exponentiations. Vranic instead visits the residues in
+primitive-root order: repeatedly multiply by a suitable number $g$ and
+reduce modulo $p$ to visit every integer from 1 to $p-1$ once.
+A recurrence updates the current Fermat quotient from the previous one,
+using the multiplication's carry and the residue's modular inverse.
+This turns the main calculation into a loop of additions,
+multiplications and reductions.
+
+Our implementation computes the same sums with fewer loop steps and
+cheaper updates. The
+[mathematical details](REPRODUCING.md#9-mathematical-details)
+derive the test and the identities used below.
+
+## Improvements to the calculation
+
+1. **Use doubling for cheaper state updates.**
+   Replace multiplication by the general value $g$ in the main loop with
+   multiplication by 2. Reducing $2a$ modulo $p$ then requires at most one
+   subtraction, and updating the inverse requires a conditional addition
+   followed by a right shift. When doubling visits only part of the
+   nonzero residues, the code follows each of the remaining cycles in
+   turn, covering the complete set.
+
+2. **Process a residue and its negative together.**
+   The quotients for $a$ and $p-a$ are related by
+   $q_p(p-a)\equiv q_p(a)+a^{-1}\pmod p$.
+   We track their combined value $x=2q_p(a)+a^{-1}$ and recover the
+   complete sums from the values of $x$ and $x^2$.
+   For $p>3$, these are $Q_1=\sum x$ and $Q_2=\tfrac12\sum x^2$,
+   with one representative per pair; $p=3$ has a separate correction.
+   This reduces the traversal from $p-1$ to **$(p-1)/2$ states**.
+
+3. **Update independent states together with SIMD.**
+   One recurrence step depends on its previous state. We split cycles
+   into segments and calculate each segment's starting state separately,
+   giving several independent streams of work.
+   SIMD instructions apply the same operation to multiple streams at
+   once. The ARM kernel uses 16 streams in four NEON vector groups;
+   the x86 kernel uses 64 streams in four AVX-512 vector groups.
+   All streams within a worker use the same prime and modulus.
+
+4. **Accumulate products before reducing them.**
+   Quotient states use Montgomery representation, an encoding that
+   allows modular products to be reduced with multiplication and shifts.
+   The loop forms ordinary 64-bit square products and sums a block of
+   them before applying one Montgomery reduction. The block size is
+   chosen from $p$ so the sum fits in 64 bits.
+   Wide accumulators also hold the first-moment sum and the reduced
+   square-block sums until final normalization. This removes reductions
+   from most loop iterations.
+
+5. **Generate doubling carries in blocks on ARM.**
+   Each doubling step needs to know whether $2a$ crossed $p$.
+   Dividing $2^{32}a$ by $p$ gives a 32-bit quotient whose bits are the
+   next 32 doubling carries. The ARM kernel consumes these bits one at
+   a time while updating the quotient state, replacing the repeated
+   residue doubling and comparison with one division per 32 steps.
+
+6. **Run different primes on different workers.**
+   A sieve finds the primes in each interval. Workers take separate
+   primes from that list, and each worker uses SIMD for its own prime.
+   This combines the prime-level parallelism used by Vranic with the
+   faster inner loop. Completed intervals are saved as checkpoints.
+
+## Measured speed
+
+These measurements use all **5,286 primes from 200M through 200.1M**,
+with eight workers on each machine.
+
+| Machine | Version | Wall-clock time |
+|---|---|---:|
+| M1 Max | Vranic's recurrence | 794.923 s |
+| M1 Max | Optimized NEON carry-word kernel | 27.839 s |
+| EPYC 9R45 | Optimized AVX2 kernel | 18.273 s |
+| EPYC 9R45 | Optimized AVX-512 kernel | **7.314 s** |
+
+The optimized ARM version is **28.55x faster on the same M1 Max**.
+On the EPYC, AVX-512 is **2.50x faster than AVX2**.
+Comparing Vranic's recurrence on the M1 Max with the optimized EPYC
+version gives **108.68x overall**, combining software and hardware gains.
+
+The original baseline is one run; the optimized times are medians of
+three runs. The table records the September 11 implementations.
+[Measurements and source versions](evidence/publication/benchmarks.json)
+are retained for reproduction.
 
 ## Build and run
 
@@ -124,10 +156,9 @@ target/release/lerch-prime-search benchmark \
   --output benchmark.json
 ```
 
-Choose a new output filename. See `--help` and
-[REPRODUCING.md](REPRODUCING.md) for search, resume, deadline and audit
-commands. The supervisor uses Python's standard library; the documented
-reproduction commands use Python 3.12 or newer.
+See `--help` and [REPRODUCING.md](REPRODUCING.md) for search, resume and
+audit commands. The search supervisor and evidence tools use Python 3.12
+or newer and its standard library.
 
 Both kernels support inputs up to two billion. Current checks cover
 native ARM execution, including large-prime comparisons, and x86
@@ -146,12 +177,10 @@ coverage and recorded identities. Nine widely spaced primes were also
 recomputed with the original recurrence. The original completed data
 is preserved unchanged.
 
-For cloud runs, set a computation deadline and stop the instance when finished.
-
 ## Credit and license
 
-This is an improvement of Veljko Vranic's original software. His code,
-lower-range results and discovery of the fifth prime are credited in
+Vranic's code, their lower-range results and their discovery of the
+fifth prime are credited in
 [CITATION.cff](CITATION.cff) and the
 [upstream evidence record](evidence/publication/upstream.json).
 The original [MIT license](LICENSE) is preserved.

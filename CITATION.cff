@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: >-
   Cite this derivative software for the 200M-1B computational extension,
-  and also cite Veljko Vranic's original software and lower-range data
+  and also cite Vranic's original software and lower-range data
   listed in references.
 title: "Lerch primes: an audited computational extension from 200 million to one billion"
 type: software
