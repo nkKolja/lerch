@@ -1,5 +1,12 @@
 # No additional Lerch primes between 200 million and one billion
 
+**This repository is a performance-oriented improvement of
+[Veljko Vranic's original Lerch-prime search](https://github.com/veljkovranic/lerch),
+with an extended computation and its reproducibility data.** It retains
+the upstream mathematical criterion and an independent reference path;
+the original MIT license and attribution are preserved. It is published
+as a standalone repository, rather than a GitHub fork.
+
 ## Computational result
 
 An optimized Rust search tested **all 39,768,597 primes in
@@ -36,6 +43,35 @@ implementation**, not a theorem excluding further Lerch primes, a
 sublinear algorithm, or a claim of mathematical priority. The complete
 large campaign has not been independently repeated by another researcher.
 
+## Improvements relative to the original implementation
+
+The original already uses Fermat-quotient moments, a primitive-root
+recurrence, sieving and parallel search. Those foundations are not new
+contributions of this repository. The changes below improve that design:
+
+| Improvement | What changes |
+|---|---|
+| Doubling throughout the traversal | Replace general-base inner-loop multiplication/division with doubling, carry bits and modular halving. Coset decomposition makes this work even when 2 is not a primitive root. |
+| Centered sign pairs | Account for both canonical residues $a$ and $p-a$ with one transformed state. Visit exactly $(p-1)/2$ states instead of $p-1$, while recovering both complete moments. |
+| Independent recurrence streams | Initialize disjoint segments or cosets separately so the CPU can overlap updates instead of waiting on one dependency chain. |
+| Explicit SIMD | Process streams together with NEON on ARM or AVX-512 on x86. The retained production kernels use 16 and 64 streams, respectively. |
+| Montgomery representation and batched products | Keep quotient states encoded with radix $2^{64}$, accumulate ordinary widening products, then perform one Montgomery reduction per bounded block rather than per product. |
+| Deferred moment normalization | Accumulate first moments in wide registers and postpone normalization of reduced square blocks. Proven bounds avoid overflow and unnecessary per-term reductions. |
+| ARM carry words | Generate 32 future doubling carries with one integer quotient/remainder calculation per stream, removing the per-step residue carry chain. The slower reciprocal variant is not retained. |
+| Prime-level scheduling | Combine SIMD within a prime with worker parallelism across independent primes, avoiding nested thread pools and retaining resumable range checkpoints. |
+| Checked wider inputs and reproducible operation | Add overflow-safe two-billion input support, an explicit compute deadline, portable commands, retained original-source/data capsules, and independent coverage/data audits. These are correctness and usability improvements, not additional timing factors. |
+
+The recorded benchmark improves from **794.923 seconds for the original
+code on the M1 Max to 7.314 seconds for the AVX-512 version on the EPYC:
+108.685x overall**. This combines **software and hardware changes**.
+On the **same M1 Max**, the original-to-optimized ARM comparison is
+**28.554x**. Both comparisons use the same 5,286 primes and eight workers;
+the original baseline is one observation, while the optimized results
+are medians of three runs. These are historical benchmark builds, not
+new measurements of the cleaned publication snapshot. See
+[Measured improvements](#measured-improvements) for exact versions,
+samples and the same-EPYC comparison.
+
 ## Definition and arithmetic method
 
 For an odd prime $p$ and an integer $a$ not divisible by $p$, define
@@ -61,11 +97,61 @@ L_p=\frac{Q_1^2+Q_2-2Q_1}{2}\pmod p,\qquad
 p\text{ is Lerch}\ \Longleftrightarrow\ L_p=0.
 $$
 
-Division by 2 denotes its modular inverse. To see the identity, expand
-$\prod_a(1+p\,q_p(a))=((p-1)!)^{p-1}$ modulo $p^3$ and use
-$(p-1)!=-1+pW_p$ and $Q_1\equiv W_p\pmod p$. This avoids computing
-an exponentiation for every residue in the search, while the independent
-definition-level verifier retains that slower route.
+### Derivation of the moment identity
+
+Use the **full integer sums** $S=\sum_{a=1}^{p-1}q_p(a)$ and
+$T=\sum_{a=1}^{p-1}q_p(a)^2$ during the derivation; their residues modulo
+$p$ are $Q_1$ and $Q_2$.
+
+By the definition of the Fermat quotient,
+$1+p q_p(a)=a^{p-1}$. Multiplying this equality for every $a$ gives the
+exact identity
+
+$$
+\prod_{a=1}^{p-1}(1+p q_p(a))
+=\prod_{a=1}^{p-1}a^{p-1}
+=((p-1)!)^{p-1}.
+$$
+
+On the left, terms using three or more nonconstant factors contain
+$p^3$ and disappear modulo $p^3$. The terms using two factors sum to
+$\sum_{a<b}q_p(a)q_p(b)=(S^2-T)/2$, so
+
+$$
+\prod_{a=1}^{p-1}(1+p q_p(a))
+\equiv 1+pS+\frac{p^2}{2}(S^2-T)\pmod{p^3}.
+$$
+
+On the right, the Wilson quotient gives $(p-1)!=-1+pW_p$.
+Because $p-1$ is even, the binomial expansion is
+
+$$
+((p-1)!)^{p-1}
+=(1-pW_p)^{p-1}
+\equiv 1-(p-1)pW_p+\binom{p-1}{2}p^2W_p^2
+\equiv 1+pW_p+p^2(W_p^2-W_p)\pmod{p^3}.
+$$
+
+Equate the two expansions and use $S-W_p=p\ell_p$, which is the
+definition of the integer Lerch quotient. After cancelling and dividing
+by $p^2$,
+
+$$
+2\ell_p+S^2-T\equiv 2W_p^2-2W_p\pmod p.
+$$
+
+Finally, Lerch's congruence says $S\equiv W_p\pmod p$. Substitution gives
+
+$$
+\boxed{2\ell_p\equiv S^2+T-2S
+\equiv Q_1^2+Q_2-2Q_1\pmod p.}
+$$
+
+Thus computing just the two moments modulo $p$ is sufficient to test the
+Lerch condition. This moment identity is inherited from the upstream
+approach; the faster traversal and accumulation below are the improvements.
+The independent definition-level verifier retains the slower power-sum
+and factorial route.
 
 ### Doubling cycles cover every odd prime
 
@@ -77,8 +163,9 @@ v'=v/2\pmod p,\qquad u'=u+G+kv'\pmod p.
 $$
 
 This recurrence does **not** require 2 to be a primitive root.
-If $m=\operatorname{ord}_p(2)$ and $d=(p-1)/m$, choose a primitive root
-$g$. The $d$ cosets with representatives $1,g,\ldots,g^{d-1}$
+Let $m$ be the multiplicative order of 2 modulo $p$, meaning the smallest
+positive integer with $2^m\equiv1\pmod p$, and set $d=(p-1)/m$.
+Choose a primitive root $g$. The $d$ cosets with representatives $1,g,\ldots,g^{d-1}$
 partition all nonzero residues into doubling cycles. Representatives are
 streamed using the original general-base recurrence; no table of all
 residues is needed.
