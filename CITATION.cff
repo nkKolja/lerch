@@ -6,6 +6,8 @@ message: >-
   authorship of a paper.
 title: "Lerch primes: an audited computational extension from 200 million to one billion"
 type: software
+repository-code: "https://github.com/nkKolja/lerch"
+url: "https://github.com/nkKolja/lerch/releases/tag/results-1b-v1"
 authors:
   - family-names: Kaluderovic
     given-names: Novak

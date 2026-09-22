@@ -21,14 +21,14 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 
 The publication assets are listed in
 [`assets.json`](evidence/publication/assets.json).
-They are prepared for a **private** release in `nkKolja/lerch`; preparation
-and upload are separate actions. No DOI or public data-deposit accession
-has been assigned here. When the publisher has attached them, a permitted
-account can use the chosen release tag:
+All six are attached to the **private**
+[`results-1b-v1` release](https://github.com/nkKolja/lerch/releases/tag/results-1b-v1)
+in `nkKolja/lerch`, with their uploaded sizes and SHA-256 digests checked
+against the retained manifest. No DOI or public data-deposit accession
+has been assigned. An account with repository access can download them:
 
 ```sh
-# Replace RELEASE_TAG with the actual tag shown on the private release.
-gh release download RELEASE_TAG --repo nkKolja/lerch --dir release-data
+gh release download results-1b-v1 --repo nkKolja/lerch --dir release-data
 (cd release-data && shasum -a 256 -c ../evidence/publication/RELEASE-SHA256SUMS)
 ```
 

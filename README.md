@@ -312,8 +312,10 @@ benchmark recipes and full-run commands. The raw campaign is a
 producing source, lockfile, controller and full MIT notice are separately
 archived. Absolute operational paths are removed only from explicitly
 labelled derived metadata; original manifests and canonical archives are
-unchanged. The package is prepared for private distribution; access to
-release assets requires repository permission and publisher upload.
+unchanged. All six assets are available in the private
+[results-1b-v1 release](https://github.com/nkKolja/lerch/releases/tag/results-1b-v1).
+Access requires permission to this repository. Uploaded asset sizes and
+SHA-256 digests match the retained release manifest.
 
 ## Build and use the publication implementation
 
