@@ -597,3 +597,49 @@ explain the supported limit; raising the limit alone is not safe.
 The historical search used scalar cleanup for incomplete coset groups;
 the cleaned kernels use SIMD tails. Old benchmark timings are therefore
 not silently relabelled as measurements of the new source.
+
+### Sharing inverse-pair state on ARM
+
+The `neon-inverse` backend additionally groups sign pairs under
+$a\mapsto r/a$, where $r=2^{64}\bmod p$. A regular group is
+$\{a,p-a,b,p-b\}$ with $b=r/a\bmod p$. The ordinary integer $b$ is
+also the Montgomery-encoded inverse of $a$; the encoded inverse of
+$b$ is $a$.
+
+Keep the two encoded centered states
+
+$$
+X=r\bigl(2q_p(a)+a^{-1}\bigr),\qquad
+Y=r\bigl(2q_p(b)+b^{-1}\bigr)\pmod p.
+$$
+
+For $G=2r q_p(2)\bmod p$, doubling $a$ and halving $b$ gives
+
+$$
+a'=2a-kp,\qquad b'=(b+\varepsilon p)/2,
+$$
+
+$$
+X'=X+G+(2k-1)b',\qquad
+Y'=Y-G+(1-2\varepsilon)a\pmod p.
+$$
+
+Here $k$ is the doubling carry and $\varepsilon$ is the parity of $b$.
+The second quotient update uses the old $a$. Each regular group
+contributes $X+Y$ and $X^2+Y^2$ to the encoded centered moments;
+the existing sign-pair conversion follows once all groups are covered.
+Groups with $a=b$ or $a=p-b$ contribute one centered state instead.
+The implementation checks the total sign-pair count and handles $p=3$
+separately.
+
+The traversal pairs doubling cosets with their inverses and splits the
+self-inverse cosets at their fixed points. It uses bounded segment
+initialization rather than a table of all residues. Two four-lane NEON
+groups process eight independent regular groups at once.
+
+This saves shared residue/inverse updates while retaining both quotient
+updates and both squares. The recorded M1 Max comparison through one
+million took 0.971354417 seconds versus 1.182429459 seconds for the
+carry-word backend, using eight workers and three alternating cold runs.
+The [compact measurement](evidence/publication/inverse-grouping-1m.json)
+records the full-result digest, counts, timings and kernel version.

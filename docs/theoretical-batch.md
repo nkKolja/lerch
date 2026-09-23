@@ -1,8 +1,7 @@
 # Theoretical batch method and measured limitations
 
-This note records a derived experimental alternative to the SIMD Lerch search;
-no literature-priority claim is made.
-It gives a complete batch formula, not a faster production backend.
+This note describes an experimental alternative to the SIMD Lerch search:
+a complete batched calculation of the two Fermat-quotient moments.
 The best completed one-million experiment was **6.196 s**, compared with
 **1.147 s** for the unchanged SIMD implementation. At nine million, SIMD
 completed in **67.156 s**; the batch run was **cancelled by the user after
@@ -11,8 +10,8 @@ nine-million batch result.
 
 The compact measurements are in
 [`theoretical-batch-results.json`](theoretical-batch-results.json).
-This documentation does not require importing the experimental native
-dependencies into the SIMD production build.
+The main search keeps the SIMD implementation; the batch method is
+documented here as a theoretical and implementation experiment.
 
 ## Exact reduction to unique small fractions
 
@@ -228,8 +227,9 @@ SIMD measurement; the baseline function and SIMD kernel files were checked
 byte-identical and both measured binaries/source snapshots were preserved.
 The SIMD sweep was not rerun.
 
-These results do **not** justify an overnight billion-bound search or a
-week-long four-billion search. The cache, arithmetic bounds and fallback
-regime require separate validation, and the cancelled run cannot supply
-an extrapolated success claim. The experimental dependency tree is not
-needed for, or promoted into, production SIMD search.
+**Practical conclusion:** use the SIMD implementation for further large
+searches. The batch prototype's general-transform path is already much
+slower at nine million, and its growing cache and arithmetic requirements
+make a four-billion run impractical in its current form. The asymptotic
+construction remains useful as a research direction; its present
+implementation is not a faster search engine.

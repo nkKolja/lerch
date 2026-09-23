@@ -1,4 +1,4 @@
-//! All-prime doubling-coset traversal, shared by the two production SIMD kernels.
+//! All-prime doubling-coset setup and traversal for the SIMD backends.
 
 use crate::arith::{
     distinct_prime_factors, fermat_quotient_mod_p, inverse_mod, pow_mod, prime_base,
@@ -14,13 +14,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Backend {
+    #[serde(rename = "neon-inverse")]
+    NeonInverse,
     Neon,
     Avx512,
 }
 
 impl Backend {
     pub fn detect() -> Result<Self, String> {
-        for backend in [Self::Neon, Self::Avx512] {
+        for backend in [Self::NeonInverse, Self::Avx512] {
             if backend.validate_platform().is_ok() {
                 return Ok(backend);
             }
@@ -31,11 +33,12 @@ impl Backend {
     pub fn parse(name: &str) -> Result<Self, String> {
         let backend = match name {
             "auto" => return Self::detect(),
+            "neon-inverse" => Self::NeonInverse,
             "neon" => Self::Neon,
             "avx512" => Self::Avx512,
             _ => {
                 return Err(format!(
-                    "unknown backend {name}; choose auto, neon or avx512"
+                    "unknown backend {name}; choose auto, neon-inverse, neon or avx512"
                 ));
             }
         };
@@ -45,13 +48,14 @@ impl Backend {
 
     pub fn validate_platform(self) -> Result<(), String> {
         match self {
-            Self::Neon => crate::neon::check_platform(),
+            Self::NeonInverse | Self::Neon => crate::neon::check_platform(),
             Self::Avx512 => crate::avx512::check_platform(),
         }
     }
 
     pub fn method(self) -> &'static str {
         match self {
+            Self::NeonInverse => "neon-inverse",
             Self::Neon => "carry32",
             Self::Avx512 => "avx512-64",
         }
@@ -59,6 +63,7 @@ impl Backend {
 
     pub fn kernel(self) -> &'static str {
         match self {
+            Self::NeonInverse => crate::inverse_grouping::KERNEL,
             Self::Neon => "neon16-centered-carry32-division-r64",
             Self::Avx512 => "avx512-64-centered-paired-r64",
         }
@@ -73,9 +78,9 @@ pub struct DoublingCycleContext {
     g: u64,
     inverse_g: u64,
     quotient_g: u64,
-    quotient_two: u64,
+    pub(crate) quotient_two: u64,
     batch: u64,
-    reducer: Montgomery32,
+    pub(crate) reducer: Montgomery32,
 }
 
 impl DoublingCycleContext {
@@ -137,6 +142,15 @@ impl DoublingCycleContext {
         self.batch
     }
 
+    /// Actual iterations per square block; inverse quartets accumulate two squares.
+    pub fn kernel_batch_size(&self, backend: Backend) -> u64 {
+        if backend == Backend::NeonInverse && self.p > 3 {
+            self.batch.min(u64::MAX / (self.p - 1).pow(2) / 2)
+        } else {
+            self.batch
+        }
+    }
+
     fn representatives(&self) -> Representatives<'_> {
         Representatives {
             context: self,
@@ -158,7 +172,23 @@ impl DoublingCycleContext {
         representatives
     }
 
-    fn segments<const LANES: usize>(&self, seed: Segment) -> [Segment; LANES] {
+    pub(crate) fn representatives_from(
+        &self,
+        c: u64,
+        len: u64,
+        count: u64,
+    ) -> impl Iterator<Item = Segment> + '_ {
+        Representatives {
+            context: self,
+            remaining: count,
+            len,
+            c,
+            v: inverse_mod(c, self.p),
+            u: fermat_quotient_mod_p(c, self.p),
+        }
+    }
+
+    pub(crate) fn segments<const LANES: usize>(&self, seed: Segment) -> [Segment; LANES] {
         let lanes = LANES as u64;
         std::array::from_fn(|lane| {
             let lane = lane as u64;
@@ -205,6 +235,9 @@ impl DoublingCycleContext {
     pub fn check(&self, backend: Backend) -> Result<Canonical, String> {
         backend.validate_platform()?;
         match backend {
+            Backend::NeonInverse => {
+                crate::inverse_grouping::check(self).map(|result| result.canonical)
+            }
             Backend::Neon => {
                 let words = CarryWord32::new(self.p);
                 self.traverse(|seeds, pairs| {
@@ -284,7 +317,7 @@ mod tests {
     use crate::sieve::{integer_sqrt, segmented_primes, simple_primes};
 
     fn native_backends() -> Vec<Backend> {
-        [Backend::Neon, Backend::Avx512]
+        [Backend::NeonInverse, Backend::Neon, Backend::Avx512]
             .into_iter()
             .filter(|backend| backend.validate_platform().is_ok())
             .collect()
@@ -408,12 +441,47 @@ mod tests {
         assert!(DoublingCycleContext::new(7, 0).is_err());
         let ctx = DoublingCycleContext::new(1_999_999_973, DEFAULT_BATCH_SIZE).unwrap();
         assert_eq!(ctx.batch_size(), 4);
-        for backend in [Backend::Neon, Backend::Avx512] {
+        assert_eq!(ctx.kernel_batch_size(Backend::NeonInverse), 2);
+        assert_eq!(ctx.kernel_batch_size(Backend::Neon), 4);
+        for backend in [Backend::NeonInverse, Backend::Neon, Backend::Avx512] {
             if backend.validate_platform().is_err() {
                 assert!(ctx.check(backend).is_err());
             }
         }
         assert!(Backend::parse("avx2").is_err());
+    }
+
+    #[test]
+    fn backend_names_round_trip_and_auto_selects_the_native_default() {
+        for (backend, name) in [
+            (Backend::NeonInverse, "neon-inverse"),
+            (Backend::Neon, "neon"),
+            (Backend::Avx512, "avx512"),
+        ] {
+            let encoded = serde_json::to_string(&backend).unwrap();
+            assert_eq!(encoded, format!("\"{name}\""));
+            assert_eq!(serde_json::from_str::<Backend>(&encoded).unwrap(), backend);
+            if backend.validate_platform().is_ok() {
+                assert_eq!(Backend::parse(name).unwrap(), backend);
+                assert_eq!(check_prime(2, backend).unwrap(), Canonical::two());
+            } else {
+                assert!(Backend::parse(name).is_err());
+                assert!(check_prime(2, backend).is_err());
+            }
+        }
+        if Backend::NeonInverse.validate_platform().is_ok() {
+            assert_eq!(Backend::detect().unwrap(), Backend::NeonInverse);
+        } else if Backend::Avx512.validate_platform().is_ok() {
+            assert_eq!(Backend::detect().unwrap(), Backend::Avx512);
+        } else {
+            assert!(Backend::detect().is_err());
+        }
+        assert_eq!(
+            DoublingCycleContext::new(3, DEFAULT_BATCH_SIZE)
+                .unwrap()
+                .kernel_batch_size(Backend::NeonInverse),
+            DEFAULT_BATCH_SIZE
+        );
     }
 
     fn shifted<const LANES: usize>(
@@ -475,6 +543,8 @@ mod tests {
     fn shifted_native_segments_match_centered_definitions_through_two_billion() {
         for backend in native_backends() {
             match backend {
+                // Quartet tails and caps have their own definition tests in inverse_grouping.
+                Backend::NeonInverse => continue,
                 Backend::Neon => shifted::<16>(|ctx, batch, segments, len| {
                     crate::neon::paired_sums(
                         CarryWord32::new(ctx.p),

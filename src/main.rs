@@ -19,7 +19,9 @@ const SEARCH_RUNNER: &str = include_str!("../scripts/search.py");
 
 fn usage() -> &'static str {
     "lerch-prime-search <command> [options]\n\
-     All production checks support primes through 2000000000. Backend: auto|neon|avx512.\n\
+     All production checks support primes through 2000000000.\n\
+     Backend: auto|neon-inverse|neon|avx512. Auto selects neon-inverse on ARM, avx512 on x86.\n\
+     Explicit neon retains the previous NEON16 carry32 kernel.\n\
      commands:\n\
        check --prime P [--backend B] [--output FILE]\n\
        search --start N --end N --output-dir DIR [--backend B] [--threads N]\n\
@@ -32,6 +34,7 @@ fn usage() -> &'static str {
        validate [--limit N] [--bigint-limit N] [--backend B]\n\
      search uses Python 3 stdlib on Linux/macOS and stores a deadline of at most 24h.\n\
      Above 1B an explicit absolute deadline is required. Resume never extends it.\n\
+     Resume pins the resolved backend, source, binary and runner; upgrades need a new output directory.\n\
      Search records candidates, NOT independent proofs. Default verify is expensive:\n\
      definitions plus bigint p^3 for Lerch candidates. --generic is only a cross-check.\n\
      Outputs are create-only; archived v1 data is never rewritten."
@@ -108,8 +111,10 @@ fn check(args: &[String]) -> Result<(), String> {
         (check_prime(p, backend)?, None)
     } else {
         let ctx = DoublingCycleContext::new(p, DEFAULT_BATCH_SIZE)?;
-        let setup =
-            json!({"order": ctx.order(), "cycles": ctx.cycles(), "batch_size": ctx.batch_size()});
+        let setup = json!({
+            "order": ctx.order(), "cycles": ctx.cycles(),
+            "batch_size": ctx.kernel_batch_size(backend),
+        });
         (ctx.check(backend)?, Some(setup))
     };
     emit(
@@ -264,6 +269,7 @@ fn search(args: &[String]) -> Result<(), String> {
     )?;
     let backend = backend(args)?;
     let backend_name = match backend {
+        Backend::NeonInverse => "neon-inverse",
         Backend::Neon => "neon",
         Backend::Avx512 => "avx512",
     };

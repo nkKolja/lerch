@@ -20,8 +20,9 @@ import uuid
 
 
 FORMAT = "lerch-campaign-v2"
-METHODS = {"neon": "carry32", "avx512": "avx512-64"}
+METHODS = {"neon-inverse": "neon-inverse", "neon": "carry32", "avx512": "avx512-64"}
 KERNELS = {
+    "neon-inverse": "neon8-scaled-inverse-r64",
     "neon": "neon16-centered-carry32-division-r64",
     "avx512": "avx512-64-centered-paired-r64",
 }

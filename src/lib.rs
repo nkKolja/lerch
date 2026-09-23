@@ -2,6 +2,7 @@ pub mod arith;
 mod avx512;
 mod carry_words;
 pub mod doubling_cycles;
+pub mod inverse_grouping;
 pub mod moments;
 mod neon;
 mod reduction;

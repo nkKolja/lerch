@@ -105,7 +105,7 @@ fn automatic_backend_really_runs_the_selected_kernel() {
         );
     }
     let unsupported = match backend {
-        Backend::Neon => "avx512",
+        Backend::NeonInverse | Backend::Neon => "avx512",
         Backend::Avx512 => "neon",
     };
     assert!(
@@ -113,6 +113,57 @@ fn automatic_backend_really_runs_the_selected_kernel() {
             .status
             .success()
     );
+}
+
+#[test]
+fn neon_inverse_is_the_arm_default_and_explicit_neon_remains_the_baseline() {
+    if Backend::NeonInverse.validate_platform().is_err() {
+        let output = run(&["check", "--prime", "103", "--backend", "neon-inverse"]);
+        assert!(!output.status.success());
+        assert!(String::from_utf8_lossy(&output.stderr).contains("NEON requires"));
+        return;
+    }
+    assert_eq!(Backend::detect().unwrap(), Backend::NeonInverse);
+    for p in [2, 3, 5, 7, 17, 103, 257, 8191, 524_287] {
+        let prime = p.to_string();
+        let old = success(&["check", "--prime", &prime, "--backend", "neon"]);
+        let new = success(&["check", "--prime", &prime, "--backend", "neon-inverse"]);
+        let auto = success(&["check", "--prime", &prime]);
+        assert_eq!(old["canonical"], new["canonical"], "p={p}");
+        assert_eq!(auto["canonical"], new["canonical"], "p={p}");
+        assert_eq!(old["provenance"]["kernel"], Backend::Neon.kernel());
+        for result in [&auto, &new] {
+            assert_eq!(result["provenance"]["backend"], "neon-inverse");
+            assert_eq!(result["provenance"]["kernel"], "neon8-scaled-inverse-r64");
+            assert_eq!(result["format"], "lerch-check-v2");
+        }
+    }
+    let range = success(&[
+        "benchmark",
+        "--start",
+        "97",
+        "--end",
+        "103",
+        "--threads",
+        "1",
+        "--backend",
+        "neon-inverse",
+    ]);
+    assert_eq!(range["sample"]["summary"]["primes"], 3);
+    assert_eq!(range["sample"]["method"], "neon-inverse");
+    assert_eq!(range["provenance"]["backend"], "neon-inverse");
+    assert_eq!(range["provenance"]["kernel"], "neon8-scaled-inverse-r64");
+    let validation = success(&[
+        "validate",
+        "--limit",
+        "2000",
+        "--bigint-limit",
+        "200",
+        "--backend",
+        "neon-inverse",
+    ]);
+    assert_eq!(validation["validation"], "passed");
+    assert_eq!(validation["backend"], "neon-inverse");
 }
 
 #[test]
@@ -309,6 +360,12 @@ fn primary_search_uses_simd_and_resumes_without_resetting_budget_or_candidate_st
     assert_eq!(first["next_start"], 32);
     assert_eq!(first["method"], backend.method());
     assert_eq!(
+        first["config"]["backend"],
+        serde_json::to_value(backend).unwrap()
+    );
+    assert_eq!(first["config"]["binary_sha256"].as_str().unwrap().len(), 64);
+    assert_eq!(first["config"]["runner_sha256"].as_str().unwrap().len(), 64);
+    assert_eq!(
         first["candidate_hits"][0]["verification_status"],
         "pending-independent-verification"
     );
@@ -342,6 +399,55 @@ fn primary_search_uses_simd_and_resumes_without_resetting_budget_or_candidate_st
     let complete = fs::read(&path).unwrap();
     assert!(run(&resume).status.success());
     assert_eq!(fs::read(&path).unwrap(), complete);
+}
+
+#[test]
+fn old_neon_checkpoint_cannot_silently_resume_with_the_new_auto_backend() {
+    if Backend::NeonInverse.validate_platform().is_err() {
+        return;
+    }
+    let dir = Temporary::new();
+    let output = dir.path("carry32");
+    let args = [
+        "search",
+        "--start",
+        "2",
+        "--end",
+        "13",
+        "--chunk-size",
+        "5",
+        "--threads",
+        "1",
+        "--min-free-bytes",
+        "0",
+        "--source-sha",
+        "backend-resume-regression",
+        "--output-dir",
+        text(&output),
+    ];
+    let mut start = args.to_vec();
+    start.extend(["--backend", "neon", "--max-chunks", "1"]);
+    assert!(run(&start).status.success());
+    let manifest = output.join("manifest.json");
+    let before = fs::read(&manifest).unwrap();
+    let first: Value = serde_json::from_slice(&before).unwrap();
+    assert_eq!(first["config"]["backend"], "neon");
+    assert_eq!(first["method"], "carry32");
+    for backend in ["auto", "neon-inverse"] {
+        let mut resume = args.to_vec();
+        resume.extend(["--backend", backend, "--resume"]);
+        let result = run(&resume);
+        assert!(!result.status.success());
+        assert!(String::from_utf8_lossy(&result.stderr).contains("refusing to resume different"));
+        assert_eq!(fs::read(&manifest).unwrap(), before);
+    }
+    let mut resume = args.to_vec();
+    resume.extend(["--backend", "neon", "--resume"]);
+    assert!(run(&resume).status.success());
+    let completed: Value = serde_json::from_slice(&fs::read(&manifest).unwrap()).unwrap();
+    assert_eq!(completed["status"], "complete");
+    assert_eq!(completed["primes"], 6);
+    assert_eq!(completed["config"], first["config"]);
 }
 
 #[test]

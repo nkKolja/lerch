@@ -80,16 +80,25 @@ derive the test and the identities used below.
    with one representative per pair; $p=3$ has a separate correction.
    This reduces the traversal from $p-1$ to **$(p-1)/2$ states**.
 
-3. **Update independent states together with SIMD.**
+3. **Share state between inverse pairs on ARM.**
+   Let $r=2^{64}\bmod p$. Group the two sign pairs
+   $\{a,p-a\}$ and $\{r/a,p-r/a\}$, taking representatives modulo $p$.
+   One residue doubles while its partner halves, so the two quotient
+   streams share their residue and inverse updates. Each quotient still
+   contributes its own square. The `neon-inverse` backend uses this
+   grouping; the carry-word implementation remains available as `neon`.
+
+4. **Update independent states together with SIMD.**
    One recurrence step depends on its previous state. We split cycles
    into segments and calculate each segment's starting state separately,
    giving several independent streams of work.
    SIMD instructions apply the same operation to multiple streams at
-   once. The ARM kernel uses 16 streams in four NEON vector groups;
-   the x86 kernel uses 64 streams in four AVX-512 vector groups.
+   once. The inverse-grouped ARM kernel processes eight groups of four
+   residues in two NEON vector groups. The carry-word ARM backend uses
+   16 sign-pair streams, and the x86 kernel uses 64 sign-pair streams.
    All streams within a worker use the same prime and modulus.
 
-4. **Accumulate products before reducing them.**
+5. **Accumulate products before reducing them.**
    Quotient states use Montgomery representation, an encoding that
    allows modular products to be reduced with multiplication and shifts.
    The loop forms ordinary 64-bit square products and sums a block of
@@ -99,14 +108,14 @@ derive the test and the identities used below.
    square-block sums until final normalization. This removes reductions
    from most loop iterations.
 
-5. **Generate doubling carries in blocks on ARM.**
+6. **Generate doubling carries in blocks in the ARM carry-word backend.**
    Each doubling step needs to know whether $2a$ crossed $p$.
    Dividing $2^{32}a$ by $p$ gives a 32-bit quotient whose bits are the
-   next 32 doubling carries. The ARM kernel consumes these bits one at
+   next 32 doubling carries. The `neon` kernel consumes these bits one at
    a time while updating the quotient state, replacing the repeated
    residue doubling and comparison with one division per 32 steps.
 
-6. **Run different primes on different workers.**
+7. **Run different primes on different workers.**
    A sieve finds the primes in each interval. Workers take separate
    primes from that list, and each worker uses SIMD for its own prime.
    This combines the original implementation's prime-level parallelism with the
@@ -134,10 +143,39 @@ three runs. The table records the September 11 implementations.
 [Measurements and source versions](evidence/publication/benchmarks.json)
 are retained for reproduction.
 
+### Further ARM improvement
+
+A later comparison covers **all 78,498 primes through one million** on
+the M1 Max, with eight workers and fresh setup for each run:
+
+| ARM backend | Median wall-clock time |
+|---|---:|
+| NEON carry words | 1.182 s |
+| NEON inverse grouping | **0.971 s** |
+
+The inverse grouping is **1.22x faster** in this comparison. Every
+$Q_1$, $Q_2$ and Lerch result matched across three alternating runs.
+This is a separate workload from the 200M benchmark above.
+[Recorded timings and result digest](evidence/publication/inverse-grouping-1m.json).
+
+## Batched-moment experiment
+
+We also implemented an alternative that computes moments for many primes
+together, using small rational representatives, polynomial arithmetic and
+product/remainder trees. Its derived complexity is
+$\widetilde O(N^{5/3})$ bit operations for all primes through $N$.
+
+The implementation was slower than the SIMD scan at the measured sizes.
+The [theoretical write-up and implementation results](docs/theoretical-batch.md)
+explain the construction, its arithmetic costs, and the interrupted 9M run.
+The search commands use the SIMD implementations.
+
 ## Build and run
 
 Use an AArch64 CPU with NEON or an x86-64 CPU with AVX-512F for the fast
-path. The original reference calculation is also available.
+path. `auto` selects inverse grouping on ARM and AVX-512 on x86.
+Use `--backend neon` for the previous ARM carry-word implementation.
+The original reference calculation is also available.
 
 ```sh
 RUSTFLAGS="-C target-cpu=native" cargo build --release --locked
@@ -160,7 +198,7 @@ See `--help` and [REPRODUCING.md](REPRODUCING.md) for search, resume and
 audit commands. The search supervisor and evidence tools use Python 3.12
 or newer and its standard library.
 
-Both kernels support inputs up to two billion. Current checks cover
+The fast backends support inputs up to two billion. Current checks cover
 native ARM execution, including large-prime comparisons, and x86
 cross-compilation. The earlier x86 builds produced the completed search
 and EPYC benchmarks.

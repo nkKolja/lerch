@@ -306,7 +306,8 @@ class SearchSupervisorTests(unittest.TestCase):
         self.assert_ok(self.run_runner("--max-chunks", "1"))
         path = self.output / "manifest.json"
         before = path.read_bytes()
-        for options in [["--threads", "2"], ["--source-sha", "different"], ["--backend", "avx512"]]:
+        for options in [["--threads", "2"], ["--source-sha", "different"],
+                        ["--backend", "avx512"], ["--backend", "neon-inverse"]]:
             result = self.run_runner("--resume", *options)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("refusing to resume different", result.stderr)
@@ -316,6 +317,26 @@ class SearchSupervisorTests(unittest.TestCase):
         self.assertNotEqual(self.run_runner("--resume").returncode, 0)
         self.assertEqual(path.read_bytes(), before)
         self.assertEqual(len(self.calls()), 1)
+
+    def test_inverse_backend_checkpoints_pin_method_kernel_and_resume(self):
+        self.assert_ok(self.run_runner("--backend", "neon-inverse", "--max-chunks", "1"))
+        first = self.manifest()
+        self.assertEqual(first["config"]["backend"], "neon-inverse")
+        self.assertEqual(first["method"], "neon-inverse")
+        with gzip.open(self.output / first["chunks"][0]["archive"], "rt") as source:
+            chunk = json.load(source)
+        self.assertEqual(chunk["provenance"]["backend"], "neon-inverse")
+        self.assertEqual(chunk["provenance"]["kernel"], "neon8-scaled-inverse-r64")
+        changed = json.loads(json.dumps(chunk))
+        changed["provenance"]["kernel"] = search.KERNELS["neon"]
+        with self.assertRaisesRegex(ValueError, "provenance mismatch"):
+            search.validate_archive(changed, 3, 4, first["config"])
+        before = (self.output / "manifest.json").read_bytes()
+        self.assertNotEqual(self.run_runner("--resume").returncode, 0)
+        self.assertEqual((self.output / "manifest.json").read_bytes(), before)
+        self.assert_ok(self.run_runner("--backend", "neon-inverse", "--resume"))
+        self.assertEqual(self.manifest()["status"], "complete")
+        self.assertEqual(self.manifest()["config"], first["config"])
 
     def test_archived_v1_resume_is_strictly_read_only(self):
         self.output.mkdir()
