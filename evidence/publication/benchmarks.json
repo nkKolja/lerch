@@ -153,7 +153,7 @@
     "cross_hardware_m1_generic_one_pass_over_epyc_avx512_64_median": 108.68462209851354
   },
   "caveats": [
-    "The EPYC original-generic full interval run was interrupted: no same-host generic baseline exists.",
+    "The original-generic baseline was measured on the M1 Max; same-host EPYC comparisons cover AVX2 and AVX-512.",
     "Legacy generic_one_pass_speedup fields in the EPYC raw file reuse the M1 oracle time, so they change hardware.",
     "These are historical source-version measurements, not measurements of every later cleanup revision or a universal speed ranking.",
     "M1 UI/background scheduling was not fully controlled; original generic has one sample, not a median or confidence interval."

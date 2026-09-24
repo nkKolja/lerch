@@ -278,7 +278,7 @@ rebuilt binary as the original. Definition-level checks use the current
 `verify` command or the retained independent Python implementation, not
 the generic timing oracle.
 
-## 5. Repeat the historical performance experiments
+## 5. Repeat the historical performance measurements
 
 Build each capsule's range harness with the recorded toolchain and native
 flags. Use a new output path for every invocation. The source identifiers
@@ -448,7 +448,7 @@ tree plus verification helpers and license. It records a hash for every
 file. Its default is the 1B-producing version; `--revision` accepts the
 three explicitly retained benchmark revisions. It requires those Git
 objects to generate the capsules, but **using the already verified
-capsules does not require preserving experimental Git history**.
+capsules does not require preserving development Git history**.
 
 ```sh
 python3 scripts/package_source.py --output NEW_PRODUCING_SOURCE_COPY.tar.gz

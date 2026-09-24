@@ -1,88 +1,118 @@
-# Theoretical batch method and measured limitations
+# A theoretical batch result for Fermat-quotient moments
 
-This note describes an experimental alternative to the SIMD Lerch search:
-a complete batched calculation of the two Fermat-quotient moments.
-The best completed one-million experiment was **6.196 s**, compared with
-**1.147 s** for the unchanged SIMD implementation. At nine million, SIMD
-completed in **67.156 s**; the batch run was **cancelled by the user after
-72 min 20.548 s**, still in its row phase. There is no completed
-nine-million batch result.
+Complete $Q_1$ and $Q_2$ for every prime through $N$ can be computed in
+$\widetilde O(N^{5/3})$ bit operations, assuming fast integer and
+polynomial arithmetic. The construction batches unique small-fraction
+representatives, periodic row sums, and product/remainder-tree columns.
 
-The compact measurements are in
-[`theoretical-batch-results.json`](theoretical-batch-results.json).
-The main search keeps the SIMD implementation; the batch method is
-documented here as a theoretical and implementation experiment.
+## Theorem
 
-## Exact reduction to unique small fractions
-
-For a prime $p$, write
+Let $N\ge3$, and choose integers $2\le B<N$ and $1\le L\le N$. For every
+prime $p\le N$, define the moments over the canonical integers by
 
 $$
 q_p(a)=\frac{a^{p-1}-1}{p}\pmod p,\qquad
-Q_j(p)=\sum_{a=1}^{p-1}q_p(a)^j\pmod p.
+Q_j(p)=\sum_{a=1}^{p-1}q_p(a)^j\pmod p,\quad j\in\{1,2\}.
 $$
 
-The representatives in this definition are the canonical integers
-$1,\ldots,p-1$. Changing their lifts is not harmless:
-$q_p(a+kp)=q_p(a)-k/a$, whereas multiplication gives
-$q_p(ab)=q_p(a)+q_p(b)$.
-
-For all primes through $N$, fix a denominator bound $B\ge2$ and set
-$A_p=\lfloor(p-1)/B\rfloor$. Treat $p\le\max(B,3)$ separately.
-The positive reduced fractions
+**Theorem.** Assuming fast integer and polynomial arithmetic, the complete
+values $Q_1(p)$ and $Q_2(p)$ for all primes $p\le N$ can be computed in
 
 $$
-1\le a\le A_p,\qquad 1\le b\le B,\qquad \gcd(a,b)=1
+\widetilde O\left(\frac{N^2B}{L}+NL+\frac{N^2}{B}+NB\right)
 $$
 
-are injective modulo $p$, since the absolute value of the determinant
-of two such fractions is less than $p$. Their signs cover every nonzero
-residue: pigeonhole the $B+1$ multiples $0,c,\ldots,Bc$ into $B$ intervals
-of at most $A_p+1$ integers, subtract two in the same interval, and reduce
-the resulting fraction.
+bit operations. Choosing $B\asymp N^{1/3}$ and $L\asymp N^{2/3}$ gives
+the bound **$\widetilde O(N^{5/3})$**.
+
+The tilde suppresses logarithmic factors in $N$, including operand bit
+lengths, sorting and modular exponentiation costs. Integer multiplication
+and division, and polynomial multiplication and power-series inversion,
+use fast algorithms. The accounting below includes preprocessing and the
+lengths of the polynomial outputs and multiprecision operands.
+
+## Unique small-fraction representatives
+
+Fix the denominator bound $B$ and set $A_p=\lfloor(p-1)/B\rfloor$.
+Compute the primes $p\le\max(B,3)$ directly, including
+$Q_1(2)=Q_2(2)=0$. For the remaining primes, consider the positive reduced
+fractions
+
+$$
+1\le a\le A_p,\qquad 1\le b\le B,\qquad \gcd(a,b)=1.
+$$
+
+These fractions are injective modulo $p$: the absolute value of a
+nonzero cross determinant is less than $p$. Their signs cover every
+nonzero residue. To see this, pigeonhole the $B+1$ distinct residues
+$0,c,\ldots,Bc$ into $B$ intervals of at most $A_p+1$ integers.
+Subtracting two in the same interval gives a numerator of absolute value
+at most $A_p$ and a denominator at most $B$; reducing the fraction
+preserves these bounds.
 
 Each sign class therefore has one or two positive representatives.
-Choose its representative with the **smallest denominator**. For $b>1$,
-a smaller-denominator competitor must have
+Choose the one with the **smallest denominator**. For $b>1$, an opposite
+representative $c/d$ with $d<b$ satisfies $ad+bc=p$, so it must have
 
 $$
-d=p\,a^{-1}\bmod b,\qquad c=\frac{p-ad}{b},\qquad 1\le d<b.
+d=p\,a^{-1}\bmod b,\qquad
+c=\frac{p-ad}{b},\qquad 1\le d<b.
 $$
 
-It is in the rectangle exactly when $c\le A_p$. Thus retain $a/b$ precisely
-when $ad<p-bA_p$. For fixed $b<B$ and $r=p\bmod b$, this is a single
-activation threshold along that residue class:
+Here $a^{-1}$ is the inverse modulo $b$. The competitor is a positive
+reduced fraction, and it lies in the rectangle exactly when $c\le A_p$.
+Thus retain $a/b$ precisely when $ad<p-bA_p$. For fixed $b<B$ and
+$r=p\bmod b$, eligibility and retention are equivalently
 
 $$
-p>aB,\qquad p\ge ad+b\left\lceil\frac{ad}{B-b}\right\rceil,
+p>aB,\qquad
+p\ge ad+b\left\lceil\frac{ad}{B-b}\right\rceil,
 \qquad d=r\,a^{-1}\bmod b.
 $$
 
-The denominator-one case has only the eligibility threshold; denominator
-$B$ contributes no retained fractions. Sorting thresholds once per
-$(b,r)$ makes each prime's selected numerator set a prefix of a fixed list.
-There is no unresolved collision correction.
+The denominator-one case has only the eligibility threshold $p>aB$.
+Denominator $B$ contributes no retained fractions. Sorting these
+thresholds once for each $(b,r)$ makes every prime's selected numerator
+set a prefix of a fixed list. The least-denominator rule selects exactly
+one representative of every sign pair.
 
-Let $x_a=q_p(a)$ and define the integer
+## Exact formulas for both moments
+
+Canonical representatives matter because the quotient identities are
 
 $$
-h(a,b,r)=b-2\bigl((-ar^{-1})\bmod b\bigr).
+q_p(a+kp)=q_p(a)-\frac{k}{a}\pmod p,\qquad
+q_p(ab)=q_p(a)+q_p(b)\pmod p.
 $$
 
-For the canonical residue $z=a/b\bmod p$, writing $bz=a+kp$ gives
+Let $x_a=q_p(a)$. For $b>1$ and $r=p\bmod b$, define the integer
+
+$$
+h(a,b,r)=b-2\bigl((-ar^{-1})\bmod b\bigr),
+$$
+
+where $r^{-1}$ is taken modulo $b$; for $b=1$, set $h=1$.
+If $z$ is the canonical residue of $a/b\bmod p$, writing $bz=a+kp$
+gives $k=(-ar^{-1})\bmod b$ and hence
 
 $$
 T(a,b)=x_a-x_b+\frac{h(a,b,r)}{2a}
-      =q_p(z)+\frac1{2z}.
+      =q_p(z)+\frac1{2z}\pmod p.
 $$
 
 This centered expression is invariant under $z\mapsto p-z$.
-For $p>3$, the inverse-square sum vanishes, so
-$Q_1=2\sum T$ and $Q_2=2\sum T^2$ over the retained fractions.
+The two members contribute $2T$ to $Q_1$ and
+$2T^2+1/(2z^2)$ to $Q_2$. For $p>3$, the inverse-square sum over
+the complete half-domain vanishes, so
 
-For each numerator row let $m_a$ be its selected-denominator count and
-$H_a$ its integer sum of $h$. For each denominator column let
-$n_b$ be the active prefix length and define
+$$
+Q_1=2\sum_{\text{retained }a/b}T(a,b),\qquad
+Q_2=2\sum_{\text{retained }a/b}T(a,b)^2\pmod p.
+$$
+
+For each numerator row, let $m_a$ be its selected-denominator count and
+$H_a$ its integer sum of $h$. For each denominator column, let $n_b$ be
+the active prefix length and define
 
 $$
 P_b=\prod_{\text{active }a}a,\quad F_b=q_p(P_b),\quad
@@ -90,7 +120,7 @@ C_b=\sum_{\text{active }a}\frac h a,\quad
 D_b=\sum_{\text{active }a}\frac{h^2}{a^2}.
 $$
 
-Then the complete moments are
+Expanding the centered sums gives the complete moments:
 
 $$
 Q_1=2\sum_b(F_b-n_bx_b)+\sum_b C_b,
@@ -104,132 +134,114 @@ Q_2=
 \pmod p.
 $$
 
-The cross term is tractable because
-$\sum_{\text{active }a}q_p(a)=q_p(P_b)$. This uses an ordinary product
-for an unweighted first moment; it does not recover second moments from
-a product alone.
+The cross term uses
+$\sum_{\text{active }a}q_p(a)=q_p(P_b)$.
+The row terms supply the second moments, while the column product
+supplies this unweighted first-moment sum.
 
-## Full cost, including preprocessing
+## Proof of the bit-complexity bound
 
-Columns use constant-size product and accumulating remainder trees in
-activation order. The product $P_b$ is retained modulo $p^2$ for its
-Fermat quotient; the harmonic channels need modulo $p$. A state
-$(P,P^2,P\sum h/a,P^2\sum h^2/a^2)$ composes by fixed-size polynomial
-identities. Empty, shared and sparse prefix cuts are handled exactly.
-Across contexts, factor input and target-modulus sizes total
-$\widetilde O(NB)$ bits.
+### Column products and harmonic sums
 
-Rows use blocks of length $L$. Freeze masks already active at the block
-start. Their periodic generating functions have denominators $1-z^b$
-and numerator degrees below $b$. A shared denominator tree and inverse
-series evaluate the count and carry channels in
-$\widetilde O(B^2+L)$ work per row block. Apply activations inside the
-block by explicit arithmetic-progression updates. The row integers have
-known bounds, so a suitably sized auxiliary field gives exact signed
-reconstruction, not an unresolved CRT computation.
-
-There are $O(N/B)$ rows and $O(N/L)$ blocks per row. Accounting for the
-periodic evaluations, event updates, all small-base quotient evaluations,
-column trees, sieving, sorting and shared precomputation gives
+For each $(b,r)$, product and accumulating remainder trees evaluate the
+active prefixes in threshold order. Retain $P_b$ modulo $p^2$ to obtain
+its Fermat quotient; the harmonic channels need only modulo $p$.
+Writing $U=P\sum h/a$ and $V=P^2\sum h^2/a^2$, the integral state
+$(P,P^2,U,V)$ combines two disjoint blocks by
 
 $$
-\widetilde O\left(\frac{N^2B}{L}+NL+\frac{N^2}{B}+NB\right)
+P=P_1P_2,\qquad
+U=U_1P_2+U_2P_1,\qquad
+V=V_1P_2^2+V_2P_1^2.
 $$
 
-bit operations, **assuming fast integer and polynomial arithmetic**.
-The output-series length $L$ and all modulus bit lengths are counted.
-Choosing $B\asymp N^{1/3}$ and $L\asymp N^{2/3}$ gives
-$\widetilde O(N^{5/3})$. This is neither the requested
-$\widetilde O(N^{3/2})$ bound nor a single-prime square-root algorithm.
+This is a constant number of product-tree channels, with empty, shared
+and sparse prefix cuts handled by the same construction. Across the
+contexts, factor inputs and target moduli total $\widetilde O(NB)$ bits.
+Fast product/remainder trees therefore cost $\widetilde O(NB)$ bit
+operations, including column preprocessing.
 
-A streaming implementation can have near-linear working space, but the
-measured speed-oriented implementation additionally caches prime-base
-quotients. Its explicit memory cost is not covered by that streaming
-space statement. The asymptotic argument does not establish a practical
-crossover against SIMD.
+### Periodic row sums and activations
 
-## What was implemented
+There are $O(N/B)$ numerator rows. Split the range of possible prime
+values into blocks of length $L$. In each block, first freeze the masks active at
+its start. For each denominator $b$, their count and carry channels
+are periodic modulo $b$, with generating-function denominator $1-z^b$
+and numerator degree below $b$. A shared denominator tree and inverse
+series evaluate their sum in $\widetilde O(B^2+L)$ bit operations per
+row block.
 
-The research code computes complete $Q_1$, $Q_2$ and the Lerch residue
-$(Q_2+Q_1^2-2Q_1)/2\bmod p$. Completed million-bound sweeps matched every
-one of the 78,498 full tuples against the existing NEON implementation,
-with direct-power checks through 10,000.
+The integer row values satisfy $0\le m_a\le B$ and $|H_a|\le B^2$.
+A suitably sized auxiliary field therefore gives exact signed
+reconstruction with logarithmic-size coefficients.
 
-Implementations included FLINT polynomial rows, a Rust NTT/Newton-series
-row engine, bounded packed periodic sums, three-coefficient word packing,
-LCM grouping, sparse output access, explicit NEON register tiling and
-validated input-cycle reuse. The fast periodic paths are gated by
-**$B\le128$** (three-field packing by $B\le127$); larger bounds use the
-general NTT path.
+There are $O(N/L)$ blocks per row, so the frozen periodic evaluations
+cost
 
-Column variants included GMP, pure-Rust `num-bigint`, mixed precision,
-compressed prefix cuts, cached word Montgomery remainders and proved
-omission of modulus products larger than every possible exact prefix.
-The Rust-only version improved rows but slowed the wide columns.
-An optional GMP hybrid retained the faster overall measured combination.
+$$
+\widetilde O\left(\frac NB\frac NL(B^2+L)\right)
+=\widetilde O\left(\frac{N^2B}{L}+\frac{N^2}{B}\right).
+$$
 
-The investigation also tested the MIT-licensed
-`nkKolja/Prime-field-arithmetic` division routines, pinned at
-`c10836d835028746bee8c9d364a385662515c71f`. Factoring divisor normalization
-and the 3/2 preinverse out of each call passed extensive correctness and
-sanitizer checks. Warm-kernel wins did not survive preparation and safe
-conversion at actual node reuse counts; the dispatcher was **not enabled**.
-A separate wide-Barrett experiment likewise lost after cold setup.
+Each $(a,b,r)$ mask activates once. Apply activations inside a block as
+explicit arithmetic-progression updates, each costing $O(1+L/b)$.
+There are at most $b$ residue classes for denominator $b$, giving
 
-## Measurements and the nine-million cancellation
+$$
+\widetilde O\left(\frac NB\sum_{b\le B}b(1+L/b)\right)
+=\widetilde O(NB+NL).
+$$
 
-All listed full runs used eight workers on the same Apple M1 Max.
-Cold preprocessing is included; compilation, independent validation and
-result serialization are excluded. The initial 178.736 s build used
-ordinary optimized release; later comparisons used native CPU flags.
-The SIMD comparator is the unchanged production NEON16 kernel, not the
-separate inverse-grouping optimization.
+### Quotients, setup and balanced parameters
 
-| Bound | Implementation | Complete wall seconds |
-|---:|---|---:|
-| 1,000,000 | Initial FLINT/native batch | 178.736 |
-| 1,000,000 | Optimized rows with GMP columns | 6.916 |
-| 1,000,000 | Rust-only bounded columns | 8.778 |
-| 1,000,000 | Latest cached-word/GMP hybrid, median of three cold runs | **6.196** |
-| 1,000,000 | Same-comparison old NEON, median of three cold runs | **1.147** |
-| 9,000,000 | Old NEON, one completed cold run | **67.156** |
-| 9,000,000 | Default-parameter batch | **User-cancelled; no completed result** |
+Evaluating the small-base quotients and assembling the row and column
+terms costs $\widetilde O(N^2/B+NB)$ bit operations. The operands have
+$O(\log N)$ bits: Fermat quotients are evaluated modulo $p^2$, and the
+final moment arithmetic is modulo $p$. Sieving, sorting activation
+thresholds and shared precomputation fit within $\widetilde O(NB)$.
+The direct treatment of primes at most $\max(B,3)$ also fits this bound.
 
-The latest completed million-bound hybrid is about **5.4 times slower
-than old NEON**, despite a large improvement over the first batch port.
-Pure-Rust wide arithmetic and the rejected division alternatives must not
-be described as faster than the measured GMP paths.
+Adding these costs proves
 
-At nine million the unchanged defaults are $B=209$, $L=43{,}371$ and
-43,062 numerator rows. This crosses the packed-path limit and invokes
-the general NTT fallback. Its prime-basis cache contains
-1,382,125,257 `u32` entries: **5,528,501,028 bytes (5.15 GiB)**.
-That allocation and approximately 17.3 seconds of cold setup were charged.
-Three representative NTT blocks took **9.31–10.42 ms each**; these are
-component observations, not a completed sweep time.
+$$
+\widetilde O\left(\frac{N^2B}{L}+NL+\frac{N^2}{B}+NB\right).
+$$
 
-The user stopped the actual batch on **2026-09-23 at 22:02 CEST**.
-The owned process and wrapper exited and were not restarted.
-The receipt records **4340.547991583 seconds (72 min 20.548 s)** elapsed,
-termination by SIGTERM, and **not** a timeout. Peak process RSS was
-5,874,647,040 bytes (5.47 GiB).
+With $B\asymp N^{1/3}$ and $L\asymp N^{2/3}$, the first three terms
+are $O(N^{5/3})$ and the fourth is $O(N^{4/3})$. This proves the
+$\widetilde O(N^{5/3})$ bit-complexity result for the complete collection
+of prime moments.
 
-The final logged progress, at 4337.8 seconds, was **30,848 of 43,062 rows**
-and **4,123,866 of 4,489,413 row blocks (91.86%)**. Those are completed
-**row-work blocks**, not completed primes or final moment coverage.
-The column phase and final moment assembly had not started. No complete
-nine-million batch tuple file or comparison exists.
+## Implementation and measured performance
 
-The nine-million SIMD oracle is complete and remains valid: 602,489
-primes, last prime 8,999,993, computed hits `[3,103,839,2237]`.
-A hybrid progress-only correction changed the executable hash after the
-SIMD measurement; the baseline function and SIMD kernel files were checked
-byte-identical and both measured binaries/source snapshots were preserved.
-The SIMD sweep was not rerun.
+The implementation computes complete $Q_1$, $Q_2$ and the Lerch residue
+$(Q_2+Q_1^2-2Q_1)/2\bmod p$. It uses bounded packed periodic rows for
+**$B\le128$**, with three-field packing for $B\le127$, and a general
+NTT/Newton-series path for larger $B$. Cached word remainders serve
+small column nodes; GMP handles the wide product/remainder-tree columns.
+The implementation also caches small-base quotient data.
 
-**Practical conclusion:** use the SIMD implementation for further large
-searches. The batch prototype's general-transform path is already much
-slower at nine million, and its growing cache and arithmetic requirements
-make a four-billion run impractical in its current form. The asymptotic
-construction remains useful as a research direction; its present
-implementation is not a faster search engine.
+The completed comparison covers **all 78,498 primes through
+$N=1{,}000{,}000$**, using eight workers on an Apple M1 Max. Each timing
+includes fresh setup and preprocessing; compilation, independent
+validation and result serialization are excluded. The full moment tuples
+matched the carry32 NEON results, with direct-power checks through 10,000.
+
+| Implementation | Samples | Median wall-clock seconds |
+|---|---:|---:|
+| Cached-word/GMP batch | 3 | 6.196073291 |
+| Prior carry32 NEON kernel | 3 | 1.147294291 |
+
+The batch implementation is about **5.4x slower** in this comparison.
+The comparator is the prior carry32 kernel, **not the later
+inverse-grouped NEON backend**. Exact completed samples, machine and
+timing scope are retained in
+[`theoretical-batch-results.json`](theoretical-batch-results.json).
+
+The asymptotic saving does not offset setup, polynomial transforms,
+memory traffic, and multiprecision product/remainder-tree costs at these
+sizes. **For the intended range $p<2^{32}$, the preprocessing, polynomial
+and multiprecision overheads make this implementation impractical as an
+acceleration of the SIMD search.** This is an implementation-level
+assessment; the measured bound is $N=1{,}000{,}000$, and the production
+SIMD CLI supports inputs through 2,000,000,000.

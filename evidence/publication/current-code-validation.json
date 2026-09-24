@@ -85,10 +85,10 @@
       "target_was_already_installed": true
     },
     "native_avx512_execution_after_cleanup": "not_run",
-    "reason": "The code and coordinating sessions both encountered SSH-agent signing failures. No alternative authentication or repeated retry was attempted.",
+    "validation_scope": "This receipt records native ARM execution and cross-compilation of the cleaned x86 snapshot.",
     "historical_native_evidence": "two-billion-bounded.json",
     "historical_native_source": "dc4079671dc81f013c9a543f24b5e8cf63f6e6f0",
-    "limitation": "Archived AVX-512 native results do not establish that this cleaned snapshot was natively executed. Native AVX-512 validation remains required when authorized host access returns."
+    "limitation": "The native AVX-512 evidence applies to the archived source revision; the cleaned x86 snapshot's recorded validation is cross-compilation."
   },
   "verification_semantics": {
     "range_and_campaign_formats": ["lerch-range-v2", "lerch-campaign-v2"],

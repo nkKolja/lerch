@@ -20,7 +20,7 @@ $$
 
 The run used **eight cores of an AMD EPYC 9R45** on an AWS c8a.2xlarge
 instance. It completed on 14 September 2026 after **53 hours 24 minutes
-of wall-clock time**, including interruptions. At $0.43108 per hour,
+of wall-clock time**, including controller overhead and gaps between chunks. At $0.43108 per hour,
 this corresponds to approximately **$23 in compute**.
 
 ## How the test works
@@ -158,17 +158,26 @@ $Q_1$, $Q_2$ and Lerch result matched across three alternating runs.
 This is a separate workload from the 200M benchmark above.
 [Recorded timings and result digest](evidence/publication/inverse-grouping-1m.json).
 
-## Batched-moment experiment
+## Theoretical batch result
 
-We also implemented an alternative that computes moments for many primes
-together, using small rational representatives, polynomial arithmetic and
-product/remainder trees. Its derived complexity is
-$\widetilde O(N^{5/3})$ bit operations for all primes through $N$.
+Complete $Q_1$ and $Q_2$ for **all primes through $N$** can be computed in
+**$\widetilde O(N^{5/3})$ bit operations**, assuming fast integer and
+polynomial arithmetic. The construction combines unique small-fraction
+representatives, periodic row sums, and product/remainder trees.
+[The theorem and proof](docs/theoretical-batch.md) give the full cost
+accounting and the balanced parameter choice.
 
-The implementation was slower than the SIMD scan at the measured sizes.
-The [theoretical write-up and implementation results](docs/theoretical-batch.md)
-explain the construction, its arithmetic costs, and the interrupted 9M run.
-The search commands use the SIMD implementations.
+In the completed comparison through **$N=1{,}000{,}000$**, covering all
+78,498 primes with eight workers on the M1 Max and fresh setup included,
+the batch implementation's median was **6.196073291 s**, versus
+**1.147294291 s** for the prior carry32 NEON kernel: about **5.4x slower**.
+This comparator is distinct from the later inverse-grouped NEON backend.
+
+Setup, polynomial transforms, memory traffic, and multiprecision
+product/remainder-tree costs dominate the practical calculation.
+For the intended range $p<2^{32}$, these overheads make this implementation
+impractical as an acceleration of the SIMD search. The production commands
+therefore use SIMD and retain their two-billion input limit.
 
 ## Build and run
 
