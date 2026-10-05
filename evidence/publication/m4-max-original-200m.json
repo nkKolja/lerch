@@ -1,0 +1,35 @@
+{
+ "format": "lerch-range-v1",
+ "interval": {
+  "start": 200000000,
+  "end": 200100000
+ },
+ "requested_batch": 8192,
+ "sample": {
+  "method": "generic",
+  "threads": 8,
+  "timing": {
+   "seconds": 598.758783667,
+   "pool_sieve_seconds": 0.000415708,
+   "validation_setup_traversal_collection_seconds": 598.75834275,
+   "pool_teardown_seconds": 2.5209e-05
+  },
+  "summary": {
+   "primes": 5286,
+   "first_prime": 200000033,
+   "last_prime": 200099987,
+   "residue_terms": 1057463867896,
+   "odd_recurrence_terms": 1057463867896,
+   "primary_pair_steps": 528731933948,
+   "hits": [],
+   "sha256": "ed4e5e6f577278e72a61a207041679e42d84d3396d0d224bc83b8bc8d078242b"
+  },
+  "full_oracle_tuples_matched": false
+ },
+ "canonical_rows": {
+  "stored": false,
+  "equal_to": "evidence/publication/original-200000000-200100000.json",
+  "rows": 5286,
+  "note": "All 5,286 canonical rows were compared with the M1 Max oracle and are identical; the harness field full_oracle_tuples_matched is false only because the one-pass range command takes no oracle."
+ }
+}
