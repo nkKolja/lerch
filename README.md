@@ -87,6 +87,10 @@ derive the test and the identities used below.
    streams share their residue and inverse updates. Each quotient still
    contributes its own square. The `neon-inverse` backend uses this
    grouping; the carry-word implementation remains available as `neon`.
+   Over all 78,498 primes through one million on the M1 Max, with eight
+   workers, the grouping took **0.971 s** versus 1.182 s for carry words,
+   **1.22x faster**, with every result matching
+   ([timings and result digest](evidence/publication/inverse-grouping-1m.json)).
 
 4. **Update independent states together with SIMD.**
    One recurrence step depends on its previous state. We split cycles
@@ -130,33 +134,23 @@ with eight workers on each machine.
 |---|---|---:|
 | M1 Max | Vranic's original implementation | 794.923 s |
 | M1 Max | Optimized NEON carry-word kernel | 27.839 s |
+| M4 Max | Vranic's original implementation | 598.759 s |
+| M4 Max | Optimized NEON carry-word kernel | 21.339 s |
 | EPYC 9R45 | Optimized AVX2 kernel | 18.273 s |
 | EPYC 9R45 | Optimized AVX-512 kernel | **7.314 s** |
 
-The optimized ARM version is **28.55x faster on the same M1 Max**.
+The optimized ARM version is **28.55x faster on the same M1 Max** and
+**28.06x faster on the same M4 Max**.
 On the EPYC, AVX-512 is **2.50x faster than AVX2**.
 Comparing Vranic's original implementation on the M1 Max with the optimized EPYC
 version gives **108.68x overall**, combining software and hardware gains.
 
-The original baseline is one run; the optimized times are medians of
-three runs. The table records the September 11 implementations.
+The original baseline is one run on each Mac; the optimized times are
+medians of three runs. The table records the September 11 implementations.
 [Measurements and source versions](evidence/publication/benchmarks.json)
-are retained for reproduction.
-
-### Further ARM improvement
-
-A later comparison covers **all 78,498 primes through one million** on
-the M1 Max, with eight workers and fresh setup for each run:
-
-| ARM backend | Median wall-clock time |
-|---|---:|
-| NEON carry words | 1.182 s |
-| NEON inverse grouping | **0.971 s** |
-
-The inverse grouping is **1.22x faster** in this comparison. Every
-$Q_1$, $Q_2$ and Lerch result matched across three alternating runs.
-This is a separate workload from the 200M benchmark above.
-[Recorded timings and result digest](evidence/publication/inverse-grouping-1m.json).
+are retained for reproduction. The M4 Max rows rebuild those exact sources
+on 30 September with Rust 1.95.0; every result matched the M1 Max oracle
+([M4 Max measurements](evidence/publication/m4-max-benchmarks.json)).
 
 ## Theoretical batch result
 

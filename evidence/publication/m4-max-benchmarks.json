@@ -1,0 +1,108 @@
+{
+ "format": "lerch-m4-benchmarks-v1",
+ "date": "2026-09-30",
+ "interval": {
+  "start": 200000000,
+  "end": 200100000
+ },
+ "coverage": {
+  "primes": 5286,
+  "first_prime": 200000033,
+  "last_prime": 200099987,
+  "residue_terms": 1057463867896,
+  "odd_recurrence_terms": 1057463867896,
+  "primary_pair_steps": 528731933948,
+  "hits": [],
+  "sha256": "ed4e5e6f577278e72a61a207041679e42d84d3396d0d224bc83b8bc8d078242b"
+ },
+ "outer_workers": 8,
+ "inner_workers": 1,
+ "compiler": "rustc 1.95.0 (LLVM 22.1.2); release thin LTO; codegen-units=1; -C target-cpu=native (apple-m4); cargo --locked",
+ "recorded_hardware": {
+  "mac_processor": "Apple M4 Max",
+  "performance_cores": 10,
+  "efficiency_cores": 4,
+  "os": "macOS 26.5.1 (25F80)",
+  "power": "battery power, 64% at start, discharging; no thermal or performance warning recorded",
+  "mac_worker_affinity": "No claim of fixed core affinity or fully controlled background UI load"
+ },
+ "timing_includes": "fresh thread pool, segmented sieve, validation, setup, seeds, traversal, decode, sorted collection and pool teardown",
+ "timing_excludes": "compilation, fixture warmups, canonical hash, tuple comparison, printing and evidence I/O",
+ "sources": {
+  "carry_word_capsule": "41236ecc9a3dc6dc7baf2168ce33d9b17c5ad10f (release asset lerch-producing-source-41236ec.tar.gz)",
+  "generic_harness_capsule": "8eaaab04e2402d70509fcc1938dd132c3e12fbef (release asset lerch-producing-source-8eaaab0.tar.gz)",
+  "capsule_checksums": "verified against RELEASE-SHA256SUMS and each capsule's own SHA256SUMS before building"
+ },
+ "binary_sha256": {
+  "41236ec": "3736c8567d0f9ab0880251c73375f50252fb67cb83107c87825916496637247e",
+  "8eaaab0": "ff28e68169165d6ee93da8dfc9bf8c6ae4c1908c830ecb59c91e6c88c2a0e979"
+ },
+ "commands": [
+  "cycles_comparison range-compare 200000000 200100000 paired,carry32,carry32-reciprocal m4-max-200m.jsonl evidence/publication/original-200000000-200100000.json 3 8   (in 41236ec)",
+  "cycles_comparison range 200000000 200100000 generic original-m4-max.json 8   (in 8eaaab0, run after the comparison, not concurrently)"
+ ],
+ "order": "range-compare's rotating three-method order, three passes each; then one original generic pass",
+ "original_generic": {
+  "host": "Apple M4 Max",
+  "samples": 1,
+  "seconds": 598.758783667,
+  "raw_file": "m4-max-original-200m.json"
+ },
+ "measurements": [
+  {
+   "host": "Apple M4 Max",
+   "method": "carry32",
+   "raw_file": "m4-max-200m.jsonl",
+   "samples_seconds": [
+    21.339292208,
+    21.123835917,
+    21.603236
+   ],
+   "median_seconds": 21.339292208,
+   "min_seconds": 21.123835917,
+   "max_seconds": 21.603236,
+   "samples": 3
+  },
+  {
+   "host": "Apple M4 Max",
+   "method": "carry32-reciprocal",
+   "raw_file": "m4-max-200m.jsonl",
+   "samples_seconds": [
+    21.85011075,
+    21.768224792,
+    21.815864
+   ],
+   "median_seconds": 21.815864,
+   "min_seconds": 21.768224792,
+   "max_seconds": 21.85011075,
+   "samples": 3
+  },
+  {
+   "host": "Apple M4 Max",
+   "method": "paired",
+   "raw_file": "m4-max-200m.jsonl",
+   "samples_seconds": [
+    24.797828666,
+    24.726329208,
+    24.823388458
+   ],
+   "median_seconds": 24.797828666,
+   "min_seconds": 24.726329208,
+   "max_seconds": 24.823388458,
+   "samples": 3
+  }
+ ],
+ "speedups": {
+  "same_m4_generic_one_pass_over_carry32_median": 28.05898048682834,
+  "same_m4_paired_over_carry32_medians": 1.1620736256989541,
+  "cross_hardware_m1_over_m4_generic_one_pass": 1.327618070179488,
+  "cross_hardware_m1_over_m4_carry32_medians": 1.3046111907387026
+ },
+ "caveats": [
+  "Rust 1.95.0 / LLVM 22.1.2 was used; the historical M1 and EPYC runs recorded Rust 1.98.1.",
+  "The generic_one_pass_seconds header and generic_one_pass_speedup fields in m4-max-200m.jsonl reuse the M1 oracle time, so they compare different hardware; use the same-M4 speedup above.",
+  "In m4-max-200m.jsonl only the absolute oracle_path was rewritten to the repository-relative path; all other bytes of each row are as emitted.",
+  "Original generic has one sample, as on the M1 Max; the machine ran on battery power and background UI load was not controlled."
+ ],
+ "environment_log": "2026-09-30T19:49:46Z\nApple M4 Max\nhw.perflevel0.physicalcpu: 10 hw.perflevel1.physicalcpu: 4 \nProductName:\t\tmacOS ProductVersion:\t\t26.5.1 BuildVersion:\t\t25F80 \nrustc 1.95.0 (59807616e 2026-04-14)\nLLVM version: 22.1.2\nRUSTFLAGS=-C target-cpu=native (apple-m4); release thin LTO; codegen-units=1; --locked\nNow drawing from 'Battery Power'\n -InternalBattery-0 (id=22478947)\t64%; discharging; 3:27 remaining present: true\nNote: No thermal warning level has been recorded Note: No performance warning level has been recorded Note: No CPU power status has been recorded \n21:49  up 112 days, 17 mins, 2 users, load averages: 3.15 2.34 2.63\n41236ec 3736c8567d0f9ab0880251c73375f50252fb67cb83107c87825916496637247e\n8eaaab0 ff28e68169165d6ee93da8dfc9bf8c6ae4c1908c830ecb59c91e6c88c2a0e979\nend 2026-09-30T20:03:09Z\nNow drawing from 'Battery Power'\n -InternalBattery-0 (id=22478947)\t45%; discharging; 0:37 remaining present: true\nNote: No thermal warning level has been recorded Note: No performance warning level has been recorded Note: No CPU power status has been recorded \n22:03  up 112 days, 30 mins, 1 user, load averages: 9.72 9.12 6.89\n"
+}
