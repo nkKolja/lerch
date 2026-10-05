@@ -63,67 +63,84 @@ derive the test and the identities used below.
 
 ## Improvements to the calculation
 
-1. **Use doubling for cheaper state updates.**
-   Replace multiplication by the general value $g$ in the main loop with
-   multiplication by 2. Reducing $2a$ modulo $p$ then requires at most one
-   subtraction, and updating the inverse requires a conditional addition
-   followed by a right shift. When doubling visits only part of the
-   nonzero residues, the code follows each of the remaining cycles in
-   turn, covering the complete set.
+The original loop, kept in `src/reference_recurrence.rs`, visits all
+$p-1$ residues in one sequence by repeatedly multiplying by a primitive
+root $g$. Every step performs four hardware divisions: to reduce $gc$, to
+update the inverse, to update the quotient, and to add the square to
+$Q_2$. The optimized code changes that loop in six places.
 
-2. **Process a residue and its negative together.**
-   The quotients for $a$ and $p-a$ are related by
-   $q_p(p-a)\equiv q_p(a)+a^{-1}\pmod p$.
-   We track their combined value $x=2q_p(a)+a^{-1}$ and recover the
-   complete sums from the values of $x$ and $x^2$.
-   For $p>3$, these are $Q_1=\sum x$ and $Q_2=\tfrac12\sum x^2$,
-   with one representative per pair; $p=3$ has a separate correction.
-   This reduces the traversal from $p-1$ to **$(p-1)/2$ states**.
+1. **Multiply by 2 instead of by $g$** (`src/doubling_cycles.rs`).
+   The residue now doubles, so reducing $2c$ needs at most one
+   subtraction of $p$. Its inverse halves, which is a conditional
+   addition of $p$ and a shift. The quotient update adds $q_p(2)$, plus
+   the new inverse when the doubling passed $p$. No step divides.
+   Doubling alone reaches every residue only when 2 is a primitive root,
+   so the code computes the order of 2 and walks every cycle. The
+   original recurrence is used once per cycle, to find each cycle's
+   starting point, not once per residue.
 
-3. **Share state between inverse pairs on ARM.**
-   Let $r=2^{64}\bmod p$. Group the two sign pairs
-   $\{a,p-a\}$ and $\{r/a,p-r/a\}$, taking representatives modulo $p$.
-   One residue doubles while its partner halves, so the two quotient
-   streams share their residue and inverse updates. Each quotient still
-   contributes its own square. The `neon-inverse` backend uses this
-   grouping; the carry-word implementation remains available as `neon`.
-   Over all 78,498 primes through one million on the M1 Max, with eight
-   workers, the grouping took **0.971 s** versus 1.182 s for carry words,
-   **1.22x faster**, with every result matching
+2. **Visit one residue of each pair $a$, $p-a$** (`src/moments.rs`).
+   Because $q_p(p-a)\equiv q_p(a)+a^{-1}\pmod p$, the loop keeps one value
+   per pair, $x=2q_p(a)+a^{-1}$, the sum of both quotients. For $p>3$,
+   $Q_1=\sum x$ and $Q_2=\tfrac12\sum x^2$ over one residue per pair;
+   $p=3$ gets a separate correction. The loop runs **$(p-1)/2$ steps
+   instead of $p-1$**, with the same work per step.
+
+3. **Let one inverse serve two residues** (`src/inverse_grouping.rs`).
+   Inverses are stored in Montgomery form with $R=2^{64}$, so the stored
+   inverse of $a$ is the number $b=r/a \bmod p$, where $r=2^{64}\bmod p$.
+   That number is itself a residue the loop must visit, and its stored
+   inverse is $a$. As $a$ doubles, $b$ halves. The kernel therefore keeps
+   one pair $(a,b)$ and two quotient values, $x$ for $\{a,p-a\}$ and $y$
+   for $\{b,p-b\}$: one residue update and one inverse update serve two
+   pairs, so each step covers four residues. Over all 78,498 primes
+   through one million on the M1 Max with eight workers, this took
+   **0.971 s** versus 1.182 s for the carry-word kernel, **1.22x faster**,
+   with every result matching
    ([timings and result digest](evidence/publication/inverse-grouping-1m.json)).
 
-4. **Update independent states together with SIMD.**
-   One recurrence step depends on its previous state. We split cycles
-   into segments and calculate each segment's starting state separately,
-   giving several independent streams of work.
-   SIMD instructions apply the same operation to multiple streams at
-   once. The inverse-grouped ARM kernel processes eight groups of four
-   residues in two NEON vector groups. The carry-word ARM backend uses
-   16 sign-pair streams, and the x86 kernel uses 64 sign-pair streams.
-   All streams within a worker use the same prime and modulus.
+4. **Run 16 to 64 sequences at once with SIMD** (`src/neon.rs`,
+   `src/inverse_grouping.rs`, `src/avx512.rs`).
+   Each step depends on the previous one, so a single sequence cannot use
+   SIMD. The code gives every SIMD lane its own sequence: whole cycles
+   when a prime has many, otherwise one cycle cut into equal segments
+   whose starting values are computed directly. All lanes of a worker
+   share the same prime.
 
-5. **Accumulate products before reducing them.**
-   Quotient states use Montgomery representation, an encoding that
-   allows modular products to be reduced with multiplication and shifts.
-   The loop forms ordinary 64-bit square products and sums a block of
-   them before applying one Montgomery reduction. The block size is
-   chosen from $p$ so the sum fits in 64 bits.
-   Wide accumulators also hold the first-moment sum and the reduced
-   square-block sums until final normalization. This removes reductions
-   from most loop iterations.
+5. **Reduce sums once per block, not every step** (`src/moments.rs`,
+   `src/reduction.rs`).
+   The original reduced $Q_2$ modulo $p$ after every square. The kernels
+   add plain 64-bit squares of the Montgomery-encoded values into 64-bit
+   accumulators and apply one Montgomery reduction per block. The block
+   length, at most $\lfloor(2^{64}-1)/(p-1)^2\rfloor$ and 8192, rules out
+   overflow; it is 18 near one billion. $Q_1$ and the reduced block sums
+   also stay in 64-bit accumulators until one final reduction, so the
+   sums need no reduction inside the loop.
 
-6. **Generate doubling carries in blocks in the ARM carry-word backend.**
-   Each doubling step needs to know whether $2a$ crossed $p$.
-   Dividing $2^{32}a$ by $p$ gives a 32-bit quotient whose bits are the
-   next 32 doubling carries. The `neon` kernel consumes these bits one at
-   a time while updating the quotient state, replacing the repeated
-   residue doubling and comparison with one division per 32 steps.
+6. **Get 32 doubling carries from one division** (`src/carry_words.rs`).
+   Each doubling step only needs to know whether $2c$ reached $p$. Those
+   answers are the binary digits of $c/p$, so dividing $2^{32}c$ by $p$
+   gives the next 32 at once, and the remainder is the residue 32 steps
+   later. The kernel reads one bit per step, which replaces the per-step
+   doubling, comparison and subtraction on $c$ with one division every
+   32 steps. In the 200M benchmark this was 1.06x faster than doubling
+   $c$ every step on the M1 Max and 1.16x on the M4 Max.
 
-7. **Run different primes on different workers.**
-   A sieve finds the primes in each interval. Workers take separate
-   primes from that list, and each worker uses SIMD for its own prime.
-   This combines the original implementation's prime-level parallelism with the
-   faster inner loop. Completed intervals are saved as checkpoints.
+Each backend combines these changes as follows:
+
+| Change | `neon` | `neon-inverse` (ARM default) | `avx512` (x86 default) |
+|---|:-:|:-:|:-:|
+| 1. Multiply by 2 | yes | yes | yes |
+| 2. One residue per pair | yes | yes | yes |
+| 3. One inverse for two residues | no | yes | no |
+| 4. Sequences per worker | 16 | 16 pairs, as 8 × 2 | 64 |
+| 5. Block reduction | yes | yes | yes |
+| 6. Carry words | yes | no | no |
+
+`neon-inverse` does not use carry words: it needs the value of $a$
+itself to update $y$. Parallelism across primes is as in the original:
+a sieve lists the primes, each worker takes whole primes, and completed
+intervals are saved as checkpoints.
 
 ## Measured speed
 
